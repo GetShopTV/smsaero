@@ -1,5 +1,9 @@
 # smsaero
 
+[![Hackage](https://img.shields.io/hackage/v/smsaero.svg)](http://hackage.haskell.org/package/smsaero)
+
+[![Build Status](https://travis-ci.org/GetShopTV/smsaero.svg?branch=master)](https://travis-ci.org/GetShopTV/smsaero)
+
 SMSAero API and HTTP client based on servant library.
 
 ## Usage
