@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -26,6 +27,8 @@ import Text.Read (readMaybe)
 import Servant.API
 import Servant.Client
 
+import GHC.Generics
+
 -- | Content type for SMSAero JSON answer (it has JSON body but "text/plain" Content-Type).
 data SmsAeroJson
 
@@ -43,10 +46,10 @@ instance (HasClient sub, KnownSymbol sym, ToText a) => HasClient (RequiredQueryP
   clientWithRoute _ req baseurl param = clientWithRoute (Proxy :: Proxy (QueryParam sym a :> sub)) req baseurl (Just param)
 
 -- | SMSAero sender's signature. This is used for the "from" field.
-newtype Signature = Signature { getSignature :: Text } deriving (Show, FromJSON, ToText)
+newtype Signature = Signature { getSignature :: Text } deriving (Show, FromJSON, ToJSON, ToText)
 
 -- | SMSAero sent message id.
-newtype MessageId = MessageId Integer deriving (Show, FromJSON, ToText)
+newtype MessageId = MessageId Integer deriving (Show, FromJSON, ToJSON, ToText)
 
 -- | SMSAero authentication data.
 data SMSAeroAuth = SMSAeroAuth
@@ -112,13 +115,15 @@ type StatusApi = RequiredQueryParam "id" MessageId :> SmsAeroGet StatusResponse
 data SmsAeroResponse a
   = ResponseOK a        -- ^ Some useful payload.
   | ResponseReject Text -- ^ Rejection reason.
-  deriving (Show)
+  deriving (Show, Generic)
+instance ToJSON a => ToJSON (SmsAeroResponse a)
 
 -- | SMSAero response to a send request.
 data SendResponse
   = SendAccepted MessageId  -- ^ Message accepted.
   | SendNoCredits           -- ^ No credits to send a message.
-  deriving (Show)
+  deriving (Show, Generic)
+instance ToJSON SendResponse
 
 -- | SMSAero response to a status request.
 data StatusResponse
@@ -128,22 +133,24 @@ data StatusResponse
   | StatusSmscReject        -- ^ Message rejected by SMSC.
   | StatusQueue             -- ^ Message queued.
   | StatusWaitStatus        -- ^ Wait for message status.
-  deriving (Show)
+  deriving (Show, Generic)
+instance ToJSON StatusResponse
 
 -- | SMSAero response to a balance request.
 -- This is a number of available messages to send.
-newtype BalanceResponse = BalanceResponse Double deriving (Show)
+newtype BalanceResponse = BalanceResponse Double deriving (Show, ToJSON)
 
 -- | SMSAero response to a senders request.
 -- This is just a list of available signatures.
-newtype SendersResponse = SendersResponse [Signature] deriving (Show, FromJSON)
+newtype SendersResponse = SendersResponse [Signature] deriving (Show, FromJSON, ToJSON)
 
 -- | SMSAero response to a sign request.
 data SignResponse
   = SignApproved  -- ^ Signature is approved.
   | SignRejected  -- ^ Signature is rejected.
   | SignPending   -- ^ Signature is pending.
-  deriving (Show)
+  deriving (Show, Generic)
+instance ToJSON SignResponse
 
 instance FromJSON a => FromJSON (SmsAeroResponse a) where
   parseJSON (Object o) = do
