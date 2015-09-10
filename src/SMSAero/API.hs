@@ -55,7 +55,7 @@ data SMSAeroAuth = SMSAeroAuth
   }
 
 -- | Phone number.
-newtype Phone = Phone { getPhone :: Integer } deriving (Show, ToText)
+newtype Phone = Phone { getPhone :: Integer } deriving (Show, ToText, FromText)
 
 -- | Date.
 newtype SMSAeroDate = SMSAeroDate { getSMSAeroDate :: UTCTime } deriving (Show)
