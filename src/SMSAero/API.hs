@@ -9,7 +9,39 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module SMSAero.API where
+-- |
+-- Module      : SMSAero.API
+-- Copyright   : (c) 2015, GetShopTV
+-- License     : BSD3
+-- Maintainer  : nickolay@getshoptv.com
+-- Stability   : experimental
+--
+-- This module describes SMSAero API and defines corresponding types.
+module SMSAero.API (
+  -- * API
+  SMSAeroAPI,
+  SendApi,
+  StatusApi,
+  -- * Combinators
+  SmsAeroJson,
+  AnswerJson,
+  RequireAuth,
+  RequiredQueryParam,
+  SmsAeroGet,
+  -- * Types
+  SMSAeroAuth(..),
+  Signature(..),
+  MessageId(..),
+  Phone(..),
+  SMSAeroDate(..),
+  -- * Responses
+  SmsAeroResponse(..),
+  SendResponse(..),
+  StatusResponse(..),
+  BalanceResponse(..),
+  SendersResponse(..),
+  SignResponse(..),
+) where
 
 import Data.Aeson
 import Data.Proxy

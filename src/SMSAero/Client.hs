@@ -1,3 +1,11 @@
+-- |
+-- Module      : SMSAero.Client
+-- Copyright   : (c) 2015, GetShopTV
+-- License     : BSD3
+-- Maintainer  : nickolay@getshoptv.com
+-- Stability   : experimental
+--
+-- SMSAero HTTP servant client and individual client functions.
 module SMSAero.Client where
 
 import Control.Monad.Trans.Either
