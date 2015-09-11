@@ -15,7 +15,7 @@ import Data.Aeson
 import Data.Proxy
 
 import Data.Time (UTCTime)
-import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
+import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds, posixSecondsToUTCTime)
 
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -46,10 +46,10 @@ instance (HasClient sub, KnownSymbol sym, ToText a) => HasClient (RequiredQueryP
   clientWithRoute _ req baseurl param = clientWithRoute (Proxy :: Proxy (QueryParam sym a :> sub)) req baseurl (Just param)
 
 -- | SMSAero sender's signature. This is used for the "from" field.
-newtype Signature = Signature { getSignature :: Text } deriving (Show, FromJSON, ToJSON, ToText)
+newtype Signature = Signature { getSignature :: Text } deriving (Show, FromJSON, ToJSON, ToText, FromText)
 
 -- | SMSAero sent message id.
-newtype MessageId = MessageId Integer deriving (Show, FromJSON, ToJSON, ToText)
+newtype MessageId = MessageId Integer deriving (Show, FromJSON, ToJSON, ToText, FromText)
 
 -- | SMSAero authentication data.
 data SMSAeroAuth = SMSAeroAuth
@@ -60,11 +60,16 @@ data SMSAeroAuth = SMSAeroAuth
 -- | Phone number.
 newtype Phone = Phone { getPhone :: Integer } deriving (Show, ToText, FromText)
 
--- | Date.
+-- | Date. Textually @SMSAeroDate@ is represented as a number of seconds since 01 Jan 1970.
 newtype SMSAeroDate = SMSAeroDate { getSMSAeroDate :: UTCTime } deriving (Show)
 
 instance ToText SMSAeroDate where
   toText (SMSAeroDate dt) = Text.pack (show (utcTimeToPOSIXSeconds dt))
+
+instance FromText SMSAeroDate where
+  fromText s = do
+    n <- fromInteger <$> readMaybe (Text.unpack s)
+    return (SMSAeroDate (posixSecondsToUTCTime n))
 
 -- | SMSAero authentication credentials.
 data RequireAuth
@@ -116,6 +121,7 @@ data SmsAeroResponse a
   = ResponseOK a        -- ^ Some useful payload.
   | ResponseReject Text -- ^ Rejection reason.
   deriving (Show, Generic)
+-- | This is a generic instance and __does not match__ @FromJSON@.
 instance ToJSON a => ToJSON (SmsAeroResponse a)
 
 -- | SMSAero response to a send request.
@@ -123,6 +129,7 @@ data SendResponse
   = SendAccepted MessageId  -- ^ Message accepted.
   | SendNoCredits           -- ^ No credits to send a message.
   deriving (Show, Generic)
+-- | This is a generic instance and __does not match__ @FromJSON@.
 instance ToJSON SendResponse
 
 -- | SMSAero response to a status request.
@@ -134,6 +141,7 @@ data StatusResponse
   | StatusQueue             -- ^ Message queued.
   | StatusWaitStatus        -- ^ Wait for message status.
   deriving (Show, Generic)
+-- | This is a generic instance and __does not match__ @FromJSON@.
 instance ToJSON StatusResponse
 
 -- | SMSAero response to a balance request.
@@ -150,6 +158,7 @@ data SignResponse
   | SignRejected  -- ^ Signature is rejected.
   | SignPending   -- ^ Signature is pending.
   deriving (Show, Generic)
+-- | This is a generic instance and __does not match__ @FromJSON@.
 instance ToJSON SignResponse
 
 instance FromJSON a => FromJSON (SmsAeroResponse a) where
@@ -158,7 +167,7 @@ instance FromJSON a => FromJSON (SmsAeroResponse a) where
     case result of
       Just "reject" -> ResponseReject <$> o .: "reason"
       _ -> ResponseOK <$> parseJSON (Object o)
-  parseJSON json = ResponseOK <$> parseJSON json
+  parseJSON j = ResponseOK <$> parseJSON j
 
 instance FromJSON SendResponse where
   parseJSON (Object o) = do
