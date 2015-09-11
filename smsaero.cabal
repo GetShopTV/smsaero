@@ -10,7 +10,9 @@ maintainer:          nickolay@getshoptv.com
 copyright:           (c) 2015, GetShopTV
 category:            Web
 build-type:          Simple
-extra-source-files:  README.md
+extra-source-files:
+    README.md
+  , CHANGELOG.md
 cabal-version:       >=1.10
 
 library
