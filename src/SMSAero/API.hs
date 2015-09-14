@@ -89,6 +89,17 @@ data SMSAeroAuth = SMSAeroAuth
   , authPassword  :: Text   -- ^ MD5 hash of a password.
   }
 
+instance FromJSON SMSAeroAuth where
+  parseJSON (Object o) = SMSAeroAuth
+    <$> o .: "user"
+    <*> o .: "password"
+  parseJSON _ = empty
+
+instance ToJSON SMSAeroAuth where
+  toJSON SMSAeroAuth{..} = object
+    [ "user"     .= authUser
+    , "password" .= authPassword ]
+
 -- | Phone number.
 newtype Phone = Phone { getPhone :: Integer } deriving (Show, ToText, FromText)
 
