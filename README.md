@@ -7,11 +7,17 @@ SMSAero API and HTTP client based on servant library.
 
 ## Documentation
 
-The original SMSAero API documentation is available [here](http://smsaero.ru/api/description).
-
 Library documentation is available [on Hackage](http://hackage.haskell.org/package/smsaero).
 
-The most recent documentation is available [on GitHub pages](http://getshoptv.github.io/smsaero/docs/).
+The original SMSAero API documentation (in Russian) is available [here](http://smsaero.ru/api/description).
+
+API documentation in English can be generated using [`pandoc`](http://pandoc.org):
+
+```
+$ stack exec pandoc --filter=docs/api-filter.hs -o docs/api.md api-intro.md
+```
+
+Note that you can generate this documentation in any format that `pandoc` supports (e.g. HTML, LaTeX, Markdown, etc.).
 
 ## Usage
 
