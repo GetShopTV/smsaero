@@ -234,16 +234,12 @@ data SmsAeroResponse a
   = ResponseOK a        -- ^ Some useful payload.
   | ResponseReject Text -- ^ Rejection reason.
   deriving (Show, Generic)
--- | This is a generic instance and __does not match__ @FromJSON@.
-instance ToJSON a => ToJSON (SmsAeroResponse a)
 
 -- | SMSAero response to a send request.
 data SendResponse
   = SendAccepted MessageId  -- ^ Message accepted.
   | SendNoCredits           -- ^ No credits to send a message.
   deriving (Show, Generic)
--- | This is a generic instance and __does not match__ @FromJSON@.
-instance ToJSON SendResponse
 
 instance ToSample (SmsAeroResponse SendResponse) (SmsAeroResponse SendResponse) where
   toSample _ = Nothing
@@ -256,16 +252,14 @@ data StatusResponse
   | StatusSmscReject        -- ^ Message rejected by SMSC.
   | StatusQueue             -- ^ Message queued.
   | StatusWaitStatus        -- ^ Wait for message status.
-  deriving (Show, Generic)
--- | This is a generic instance and __does not match__ @FromJSON@.
-instance ToJSON StatusResponse
+  deriving (Enum, Bounded, Show, Generic)
 
 instance ToSample (SmsAeroResponse StatusResponse) (SmsAeroResponse StatusResponse) where
   toSample _ = Nothing
 
 -- | SMSAero response to a balance request.
 -- This is a number of available messages to send.
-newtype BalanceResponse = BalanceResponse Double deriving (Show, ToJSON)
+newtype BalanceResponse = BalanceResponse Double deriving (Show)
 
 instance ToSample (SmsAeroResponse BalanceResponse) (SmsAeroResponse BalanceResponse) where
   toSample _ = Nothing
@@ -282,9 +276,7 @@ data SignResponse
   = SignApproved  -- ^ Signature is approved.
   | SignRejected  -- ^ Signature is rejected.
   | SignPending   -- ^ Signature is pending.
-  deriving (Show, Generic)
--- | This is a generic instance and __does not match__ @FromJSON@.
-instance ToJSON SignResponse
+  deriving (Enum, Bounded, Show, Generic)
 
 instance ToSample (SmsAeroResponse SignResponse) (SmsAeroResponse SignResponse) where
   toSample _ = Nothing
@@ -297,6 +289,12 @@ instance FromJSON a => FromJSON (SmsAeroResponse a) where
       _ -> ResponseOK <$> parseJSON (Object o)
   parseJSON j = ResponseOK <$> parseJSON j
 
+instance ToJSON a => ToJSON (SmsAeroResponse a) where
+  toJSON (ResponseOK x) = toJSON x
+  toJSON (ResponseReject reason) = object
+    [ "result" .= ("reject" :: Text)
+    , "reason" .= reason ]
+
 instance FromJSON SendResponse where
   parseJSON (Object o) = do
     result :: Text <- o .: "result"
@@ -306,33 +304,60 @@ instance FromJSON SendResponse where
       _ -> empty
   parseJSON _ = empty
 
+instance ToJSON SendResponse where
+  toJSON (SendAccepted n) = object
+    [ "result" .= ("accepted" :: Text)
+    , "id"     .= toJSON n ]
+  toJSON SendNoCredits = object
+    [ "result" .= ("no credits" :: Text)]
+
+-- | Helper to define @fromText@ matching @toText@.
+boundedFromText :: (Enum a, Bounded a, ToText a) => Text -> Maybe a
+boundedFromText = flip lookup xs
+  where
+    vals = [minBound..maxBound]
+    xs = zip (map toText vals) vals
+
+instance FromText StatusResponse where
+  fromText = boundedFromText
+
+instance ToText StatusResponse where
+  toText StatusDeliverySuccess  = "delivery success"
+  toText StatusDeliveryFailure  = "delivery failure"
+  toText StatusSmscSubmit       = "smsc submit"
+  toText StatusSmscReject       = "smsc reject"
+  toText StatusQueue            = "queue"
+  toText StatusWaitStatus       = "wait status"
+
 instance FromJSON StatusResponse where
   parseJSON (Object o) = do
     result :: Text <- o .: "result"
-    case result of
-      "delivery success"  -> pure StatusDeliverySuccess
-      "delivery failure"  -> pure StatusDeliveryFailure
-      "smsc submit"       -> pure StatusSmscSubmit
-      "smsc reject"       -> pure StatusSmscReject
-      "queue"             -> pure StatusQueue
-      "wait status"       -> pure StatusWaitStatus
-      _ -> empty
+    maybe empty pure (fromText result)
   parseJSON _ = empty
 
+instance ToJSON StatusResponse where
+  toJSON status = object [ "result" .= toText status ]
+
 instance FromJSON BalanceResponse where
-  parseJSON (Object o) = do
-    balance <- o .: "balance"
-    case readMaybe balance of
-      Just x  -> pure (BalanceResponse x)
-      Nothing -> empty
+  parseJSON (Object o) = BalanceResponse <$> o .: "balance"
   parseJSON _ = empty
+
+instance ToJSON BalanceResponse where
+  toJSON (BalanceResponse n) = object [ "balance" .= n ]
+
+instance ToText SignResponse where
+  toText SignApproved = "approved"
+  toText SignRejected = "rejected"
+  toText SignPending  = "pending"
+
+instance FromText SignResponse where
+  fromText = boundedFromText
 
 instance FromJSON SignResponse where
   parseJSON (Object o) = do
     accepted :: Text <- o .: "accepted"
-    case accepted of
-      "approved" -> pure SignApproved
-      "rejected" -> pure SignRejected
-      "pending"  -> pure SignPending
-      _ -> empty
+    maybe empty pure (fromText accepted)
   parseJSON _ = empty
+
+instance ToJSON SignResponse where
+  toJSON s = object [ "accepted" .= toText s ]
