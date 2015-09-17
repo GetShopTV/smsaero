@@ -242,7 +242,10 @@ data SendResponse
   deriving (Show, Generic)
 
 instance ToSample (SmsAeroResponse SendResponse) (SmsAeroResponse SendResponse) where
-  toSample _ = Nothing
+  toSamples _ =
+    [ ("When message is sent successfully.", ResponseOK (SendAccepted (MessageId 12345)))
+    , ("When SMSAero account does not have enough credit.", ResponseOK SendNoCredits)
+    , ("When message sender is incorrect.", ResponseReject "incorrect sender name") ]
 
 -- | SMSAero response to a status request.
 data StatusResponse
@@ -255,21 +258,25 @@ data StatusResponse
   deriving (Enum, Bounded, Show, Generic)
 
 instance ToSample (SmsAeroResponse StatusResponse) (SmsAeroResponse StatusResponse) where
-  toSample _ = Nothing
+  toSamples _ =
+    [ ("When message has been delivered successfully.", ResponseOK StatusDeliverySuccess)
+    , ("When message has been queued.", ResponseOK StatusQueue) ]
 
 -- | SMSAero response to a balance request.
 -- This is a number of available messages to send.
 newtype BalanceResponse = BalanceResponse Double deriving (Show)
 
 instance ToSample (SmsAeroResponse BalanceResponse) (SmsAeroResponse BalanceResponse) where
-  toSample _ = Nothing
+  toSamples _ =
+    [ ("Just balance.", ResponseOK (BalanceResponse 247))
+    , ("When auth credentials are incorrect.", ResponseReject "incorrect user or password") ]
 
 -- | SMSAero response to a senders request.
 -- This is just a list of available signatures.
 newtype SendersResponse = SendersResponse [Signature] deriving (Show, FromJSON, ToJSON)
 
 instance ToSample (SmsAeroResponse SendersResponse) (SmsAeroResponse SendersResponse) where
-  toSample _ = Nothing
+  toSample _ = Just (ResponseOK (SendersResponse [Signature "TEST", Signature "My Company"]))
 
 -- | SMSAero response to a sign request.
 data SignResponse
@@ -279,7 +286,9 @@ data SignResponse
   deriving (Enum, Bounded, Show, Generic)
 
 instance ToSample (SmsAeroResponse SignResponse) (SmsAeroResponse SignResponse) where
-  toSample _ = Nothing
+  toSamples _ =
+    [ ("When a new signature is approved.", ResponseOK SignApproved)
+    , ("When a new signature is rejected.", ResponseOK SignRejected) ]
 
 instance FromJSON a => FromJSON (SmsAeroResponse a) where
   parseJSON (Object o) = do
