@@ -1,5 +1,5 @@
 name:                smsaero
-version:             0.2
+version:             0.3
 synopsis:            SMSAero API and HTTP client based on servant library.
 description:         Please see README.md
 homepage:            https://github.com/GetShopTV/smsaero
