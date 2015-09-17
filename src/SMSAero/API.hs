@@ -33,6 +33,7 @@ module SMSAero.API (
   SMSAeroAuth(..),
   Signature(..),
   MessageId(..),
+  MessageBody(..),
   Phone(..),
   SMSAeroDate(..),
   -- * Responses
@@ -97,6 +98,9 @@ newtype Signature = Signature { getSignature :: Text } deriving (Show, FromJSON,
 
 -- | SMSAero sent message id.
 newtype MessageId = MessageId Integer deriving (Show, FromJSON, ToJSON, ToText, FromText)
+
+-- | SMSAero message body.
+newtype MessageBody = MessageBody Text deriving (Show, FromJSON, ToJSON, ToText, FromText)
 
 -- | SMSAero authentication data.
 data SMSAeroAuth = SMSAeroAuth
@@ -191,7 +195,7 @@ type SMSAeroAPI = RequireAuth :> AnswerJson :>
 -- | SMSAero API to send a message.
 type SendApi =
   RequiredQueryParam "to"   Phone       :>
-  RequiredQueryParam "text" Text        :>
+  RequiredQueryParam "text" MessageBody :>
   RequiredQueryParam "from" Signature   :>
   QueryParam "date" SMSAeroDate :>
   SmsAeroGet SendResponse
@@ -202,7 +206,7 @@ instance ToParam (QueryParam "to" Phone) where
                 "Recipient phone number."
                 Normal
 
-instance ToParam (QueryParam "text" Text) where
+instance ToParam (QueryParam "text" MessageBody) where
   toParam _ = DocQueryParam "text"
                 ["Hello, world!"]
                 "Message content."

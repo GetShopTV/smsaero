@@ -11,7 +11,6 @@ module SMSAero.Client where
 import Control.Monad.Trans.Either
 
 import Data.Proxy
-import Data.Text (Text)
 
 import Servant.API
 import Servant.Client
@@ -29,7 +28,7 @@ smsAeroClient = client (Proxy :: Proxy SMSAeroAPI) host
 type SmsAero a = EitherT ServantError IO (SmsAeroResponse a)
 
 -- | Send a message.
-smsAeroSend    :: SMSAeroAuth -> Phone -> Text -> Signature -> Maybe SMSAeroDate -> SmsAero SendResponse
+smsAeroSend    :: SMSAeroAuth -> Phone -> MessageBody -> Signature -> Maybe SMSAeroDate -> SmsAero SendResponse
 -- | Check status of a previously sent message.
 smsAeroStatus  :: SMSAeroAuth -> MessageId -> SmsAero StatusResponse
 -- | Check balance.
