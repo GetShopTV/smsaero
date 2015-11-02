@@ -121,7 +121,7 @@ instance ToJSON SMSAeroAuth where
     , "password" .= authPassword ]
 
 -- | Phone number.
-newtype Phone = Phone { getPhone :: Integer } deriving (Show, ToText, FromText)
+newtype Phone = Phone { getPhone :: Int64 } deriving (Show, ToText, FromText)
 
 -- | Date. Textually @SMSAeroDate@ is represented as a number of seconds since 01 Jan 1970.
 newtype SMSAeroDate = SMSAeroDate { getSMSAeroDate :: UTCTime } deriving (Show)

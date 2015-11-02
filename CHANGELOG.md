@@ -1,7 +1,8 @@
 0.4
 ---
 * Rename `StatusResponse` to `MessageStatus` and add instance Read
-* Change `MessageId` type to `MessageId Int64`
+* Change `MessageId` representation to `Int64`
+* Change `Phone` representation to `Int64`
 
 0.3
 ---
