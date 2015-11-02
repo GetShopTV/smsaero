@@ -30,7 +30,7 @@ type SmsAero a = EitherT ServantError IO (SmsAeroResponse a)
 -- | Send a message.
 smsAeroSend    :: SMSAeroAuth -> Phone -> MessageBody -> Signature -> Maybe SMSAeroDate -> SmsAero SendResponse
 -- | Check status of a previously sent message.
-smsAeroStatus  :: SMSAeroAuth -> MessageId -> SmsAero StatusResponse
+smsAeroStatus  :: SMSAeroAuth -> MessageId -> SmsAero MessageStatus
 -- | Check balance.
 smsAeroBalance :: SMSAeroAuth -> SmsAero BalanceResponse
 -- | Check the list of available sender signatures.

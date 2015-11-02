@@ -39,7 +39,7 @@ module SMSAero.API (
   -- * Responses
   SmsAeroResponse(..),
   SendResponse(..),
-  StatusResponse(..),
+  MessageStatus(..),
   BalanceResponse(..),
   SendersResponse(..),
   SignResponse(..),
@@ -226,7 +226,7 @@ instance ToParam (QueryParam "date" SMSAeroDate) where
                 Normal
 
 -- | SMSAero API to check message status.
-type StatusApi = RequiredQueryParam "id" MessageId :> SmsAeroGet StatusResponse
+type StatusApi = RequiredQueryParam "id" MessageId :> SmsAeroGet MessageStatus
 
 instance ToParam (QueryParam "id" MessageId) where
   toParam _ = DocQueryParam "id"
@@ -252,17 +252,17 @@ instance ToSample (SmsAeroResponse SendResponse) (SmsAeroResponse SendResponse) 
     , ("When SMSAero account does not have enough credit.", ResponseOK SendNoCredits)
     , ("When message sender is incorrect.", ResponseReject "incorrect sender name") ]
 
--- | SMSAero response to a status request.
-data StatusResponse
+-- | SMSAero message status.
+data MessageStatus
   = StatusDeliverySuccess   -- ^ Message is successfully delivered.
   | StatusDeliveryFailure   -- ^ Message delivery has failed.
   | StatusSmscSubmit        -- ^ Message submitted to SMSC.
   | StatusSmscReject        -- ^ Message rejected by SMSC.
   | StatusQueue             -- ^ Message queued.
   | StatusWaitStatus        -- ^ Wait for message status.
-  deriving (Enum, Bounded, Show, Generic)
+  deriving (Enum, Bounded, Show, Read, Generic)
 
-instance ToSample (SmsAeroResponse StatusResponse) (SmsAeroResponse StatusResponse) where
+instance ToSample (SmsAeroResponse MessageStatus) (SmsAeroResponse MessageStatus) where
   toSamples _ =
     [ ("When message has been delivered successfully.", ResponseOK StatusDeliverySuccess)
     , ("When message has been queued.", ResponseOK StatusQueue) ]
@@ -332,10 +332,10 @@ boundedFromText = flip lookup xs
     vals = [minBound..maxBound]
     xs = zip (map toText vals) vals
 
-instance FromText StatusResponse where
+instance FromText MessageStatus where
   fromText = boundedFromText
 
-instance ToText StatusResponse where
+instance ToText MessageStatus where
   toText StatusDeliverySuccess  = "delivery success"
   toText StatusDeliveryFailure  = "delivery failure"
   toText StatusSmscSubmit       = "smsc submit"
@@ -343,13 +343,13 @@ instance ToText StatusResponse where
   toText StatusQueue            = "queue"
   toText StatusWaitStatus       = "wait status"
 
-instance FromJSON StatusResponse where
+instance FromJSON MessageStatus where
   parseJSON (Object o) = do
     result :: Text <- o .: "result"
     maybe empty pure (fromText result)
   parseJSON _ = empty
 
-instance ToJSON StatusResponse where
+instance ToJSON MessageStatus where
   toJSON status = object [ "result" .= toText status ]
 
 instance FromJSON BalanceResponse where
