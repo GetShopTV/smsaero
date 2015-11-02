@@ -1,3 +1,9 @@
+0.4
+---
+* Rename `StatusResponse` to `MessageStatus` and add instance Read
+* Change `MessageId` representation to `Int64`
+* Change `Phone` representation to `Int64`
+
 0.3
 ---
 * Add `MessageBody` newtype for `"text"` query parameter
