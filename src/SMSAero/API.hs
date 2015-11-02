@@ -46,6 +46,7 @@ module SMSAero.API (
 ) where
 
 import Data.Aeson
+import Data.Int (Int64)
 import Data.Proxy
 
 import Data.Time (UTCTime(UTCTime))
@@ -97,7 +98,7 @@ instance (KnownSymbol sym, ToParam (QueryParam sym a), HasDocs sub) => HasDocs (
 newtype Signature = Signature { getSignature :: Text } deriving (Show, FromJSON, ToJSON, ToText, FromText)
 
 -- | SMSAero sent message id.
-newtype MessageId = MessageId Integer deriving (Show, FromJSON, ToJSON, ToText, FromText)
+newtype MessageId = MessageId Int64 deriving (Show, FromJSON, ToJSON, ToText, FromText)
 
 -- | SMSAero message body.
 newtype MessageBody = MessageBody Text deriving (Show, FromJSON, ToJSON, ToText, FromText)
