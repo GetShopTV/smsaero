@@ -1,5 +1,9 @@
 language: haskell
 
+cache:
+  directories:
+  - $HOME/.stack/
+
 before_install:
   # Instructions taken from https://github.com/commercialhaskell/stack/wiki/Downloads
   - wget -q -O- http://download.fpcomplete.com/ubuntu/fpco.key | sudo apt-key add -
@@ -8,7 +12,8 @@ before_install:
   - sudo apt-get install stack -y
 
 install:
-  - stack setup
+  - stack --no-terminal --skip-ghc-check setup
+  - stack --no-terminal --skip-ghc-check test --only-snapshot
 
 script:
-  - stack test
+  - stack --no-terminal --skip-ghc-check test
