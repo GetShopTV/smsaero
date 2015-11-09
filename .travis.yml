@@ -1,15 +1,29 @@
 language: haskell
 
+# explicitly request container-based infrastructure
+sudo: false
+
+matrix:
+  include:
+  - env: GHCVER=7.10.2 STACK_YAML=stack.yaml
+    addons:
+      apt:
+        sources:
+        - hvr-ghc
+        packages:
+        - ghc-7.10.2
+
 cache:
   directories:
   - $HOME/.stack/
 
 before_install:
-  # Instructions taken from https://github.com/commercialhaskell/stack/wiki/Downloads
-  - wget -q -O- http://download.fpcomplete.com/ubuntu/fpco.key | sudo apt-key add -
-  - echo 'deb http://download.fpcomplete.com/ubuntu/precise stable main' | sudo tee /etc/apt/sources.list.d/fpco.list
-  - sudo apt-get update
-  - sudo apt-get install stack -y
+  # ghc
+  - export PATH=/opt/ghc/$GHCVER/bin:$PATH
+  # stack
+  - mkdir -p ~/.local/bin
+  - export PATH=~/.local/bin:$PATH
+  - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 
 install:
   - stack --no-terminal --skip-ghc-check setup
