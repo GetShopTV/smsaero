@@ -95,13 +95,13 @@ instance (KnownSymbol sym, ToParam (QueryParam sym a), HasDocs sub) => HasDocs (
           action' = over params (|> toParam paramP) action
 
 -- | SMSAero sender's signature. This is used for the "from" field.
-newtype Signature = Signature { getSignature :: Text } deriving (Show, FromJSON, ToJSON, ToText, FromText)
+newtype Signature = Signature { getSignature :: Text } deriving (Eq, Show, FromJSON, ToJSON, ToText, FromText)
 
 -- | SMSAero sent message id.
-newtype MessageId = MessageId Int64 deriving (Show, FromJSON, ToJSON, ToText, FromText)
+newtype MessageId = MessageId Int64 deriving (Eq, Show, FromJSON, ToJSON, ToText, FromText)
 
 -- | SMSAero message body.
-newtype MessageBody = MessageBody Text deriving (Show, FromJSON, ToJSON, ToText, FromText)
+newtype MessageBody = MessageBody Text deriving (Eq, Show, FromJSON, ToJSON, ToText, FromText)
 
 -- | SMSAero authentication data.
 data SMSAeroAuth = SMSAeroAuth
@@ -121,10 +121,10 @@ instance ToJSON SMSAeroAuth where
     , "password" .= authPassword ]
 
 -- | Phone number.
-newtype Phone = Phone { getPhone :: Int64 } deriving (Show, ToText, FromText)
+newtype Phone = Phone { getPhone :: Int64 } deriving (Eq, Show, ToText, FromText)
 
 -- | Date. Textually @SMSAeroDate@ is represented as a number of seconds since 01 Jan 1970.
-newtype SMSAeroDate = SMSAeroDate { getSMSAeroDate :: UTCTime } deriving (Show)
+newtype SMSAeroDate = SMSAeroDate { getSMSAeroDate :: UTCTime } deriving (Eq, Show)
 
 instance ToText SMSAeroDate where
   toText (SMSAeroDate dt) = Text.pack (show (utcTimeToPOSIXSeconds dt))
@@ -238,13 +238,13 @@ instance ToParam (QueryParam "id" MessageId) where
 data SmsAeroResponse a
   = ResponseOK a        -- ^ Some useful payload.
   | ResponseReject Text -- ^ Rejection reason.
-  deriving (Show, Generic)
+  deriving (Eq, Show, Generic)
 
 -- | SMSAero response to a send request.
 data SendResponse
   = SendAccepted MessageId  -- ^ Message accepted.
   | SendNoCredits           -- ^ No credits to send a message.
-  deriving (Show, Generic)
+  deriving (Eq, Show, Generic)
 
 instance ToSample (SmsAeroResponse SendResponse) (SmsAeroResponse SendResponse) where
   toSamples _ =
@@ -260,7 +260,7 @@ data MessageStatus
   | StatusSmscReject        -- ^ Message rejected by SMSC.
   | StatusQueue             -- ^ Message queued.
   | StatusWaitStatus        -- ^ Wait for message status.
-  deriving (Enum, Bounded, Show, Read, Generic)
+  deriving (Eq, Enum, Bounded, Show, Read, Generic)
 
 instance ToSample (SmsAeroResponse MessageStatus) (SmsAeroResponse MessageStatus) where
   toSamples _ =
@@ -269,7 +269,7 @@ instance ToSample (SmsAeroResponse MessageStatus) (SmsAeroResponse MessageStatus
 
 -- | SMSAero response to a balance request.
 -- This is a number of available messages to send.
-newtype BalanceResponse = BalanceResponse Double deriving (Show)
+newtype BalanceResponse = BalanceResponse Double deriving (Eq, Show)
 
 instance ToSample (SmsAeroResponse BalanceResponse) (SmsAeroResponse BalanceResponse) where
   toSamples _ =
@@ -278,7 +278,7 @@ instance ToSample (SmsAeroResponse BalanceResponse) (SmsAeroResponse BalanceResp
 
 -- | SMSAero response to a senders request.
 -- This is just a list of available signatures.
-newtype SendersResponse = SendersResponse [Signature] deriving (Show, FromJSON, ToJSON)
+newtype SendersResponse = SendersResponse [Signature] deriving (Eq, Show, FromJSON, ToJSON)
 
 instance ToSample (SmsAeroResponse SendersResponse) (SmsAeroResponse SendersResponse) where
   toSample _ = Just (ResponseOK (SendersResponse [Signature "TEST", Signature "My Company"]))
@@ -288,7 +288,7 @@ data SignResponse
   = SignApproved  -- ^ Signature is approved.
   | SignRejected  -- ^ Signature is rejected.
   | SignPending   -- ^ Signature is pending.
-  deriving (Enum, Bounded, Show, Generic)
+  deriving (Eq, Enum, Bounded, Show, Generic)
 
 instance ToSample (SmsAeroResponse SignResponse) (SmsAeroResponse SignResponse) where
   toSamples _ =
