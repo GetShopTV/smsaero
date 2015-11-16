@@ -1,3 +1,7 @@
+0.4.1
+---
+* Add `Eq` instances
+
 0.4
 ---
 * Rename `StatusResponse` to `MessageStatus` and add instance Read
