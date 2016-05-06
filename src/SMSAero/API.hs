@@ -36,6 +36,7 @@ module SMSAero.API (
   MessageBody(..),
   Phone(..),
   SMSAeroDate(..),
+  SendType,
   -- * Responses
   SmsAeroResponse(..),
   SendResponse(..),
@@ -193,12 +194,15 @@ type SMSAeroAPI = RequireAuth :> AnswerJson :>
   :<|> "senders"  :> SmsAeroGet SendersResponse
   :<|> "sign"     :> SmsAeroGet SignResponse)
 
+type SendType = Int
+
 -- | SMSAero API to send a message.
 type SendApi =
   RequiredQueryParam "to"   Phone       :>
   RequiredQueryParam "text" MessageBody :>
   RequiredQueryParam "from" Signature   :>
   QueryParam "date" SMSAeroDate :>
+  QueryParam "type" SendType :>
   SmsAeroGet SendResponse
 
 instance ToParam (QueryParam "to" Phone) where
