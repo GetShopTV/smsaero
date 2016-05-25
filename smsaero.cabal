@@ -26,9 +26,10 @@ library
     SMSAero.Utils
   build-depends:       base >= 4.7 && < 5
                      , either
-                     , servant        == 0.4.*
+                     , servant
                      , servant-client
                      , servant-docs
+                     , http-api-data
                      , aeson
                      , text
                      , time
