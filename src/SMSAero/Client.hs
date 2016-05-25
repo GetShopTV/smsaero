@@ -15,17 +15,19 @@ import Data.Proxy
 import Servant.API
 import Servant.Client
 
+import Network.HTTP.Client hiding (Proxy)
+
 import SMSAero.API
-import SMSAero.Utils
 
 -- | SMSAero client.
 smsAeroClient :: Client SMSAeroAPI
-smsAeroClient = client (Proxy :: Proxy SMSAeroAPI) host
-  where
-    host = BaseUrl Https "gate.smsaero.ru" 443
+smsAeroClient = client (Proxy :: Proxy SMSAeroAPI)
+
+defaultBaseUrl :: BaseUrl
+defaultBaseUrl = BaseUrl Https "gate.smsaero.ru" 443
 
 -- | Common SMSAero client type.
-type SmsAero a = EitherT ServantError IO (SmsAeroResponse a)
+type SmsAero a = Manager -> BaseUrl -> ClientM a
 
 -- | Send a message.
 smsAeroSend    :: SMSAeroAuth -> Phone -> MessageBody -> Signature -> Maybe SMSAeroDate -> Maybe SendType -> SmsAero SendResponse

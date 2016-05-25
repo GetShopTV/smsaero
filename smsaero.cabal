@@ -23,13 +23,13 @@ library
     SMSAero
     SMSAero.API
     SMSAero.Client
-    SMSAero.Utils
   build-depends:       base >= 4.7 && < 5
                      , either
                      , servant
                      , servant-client
                      , servant-docs
                      , http-api-data
+                     , http-client
                      , aeson
                      , text
                      , time
