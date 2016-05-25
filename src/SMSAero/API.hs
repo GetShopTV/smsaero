@@ -48,6 +48,7 @@ module SMSAero.API (
 
 import Data.Aeson
 import Data.Int (Int64)
+import Data.Monoid ((<>))
 import Data.Proxy
 
 import Data.Time (UTCTime(UTCTime))
@@ -59,7 +60,7 @@ import qualified Data.Text as Text
 
 import Control.Applicative
 import GHC.TypeLits (Symbol, KnownSymbol)
-import Text.Read (readMaybe)
+import Text.Read (readEither)
 
 import Servant.API
 import Servant.Client
@@ -83,9 +84,9 @@ instance ToJSON a => MimeRender SmsAeroJson a where
 -- | Like 'QueryParam', but always required.
 data RequiredQueryParam (sym :: Symbol) a
 
-instance (HasClient sub, KnownSymbol sym, ToText a) => HasClient (RequiredQueryParam sym a :> sub) where
+instance (HasClient sub, KnownSymbol sym, ToHttpApiData a) => HasClient (RequiredQueryParam sym a :> sub) where
   type Client (RequiredQueryParam sym a :> sub) = a -> Client sub
-  clientWithRoute _ req baseurl param = clientWithRoute (Proxy :: Proxy (QueryParam sym a :> sub)) req baseurl (Just param)
+  clientWithRoute _ req param = clientWithRoute (Proxy :: Proxy (QueryParam sym a :> sub)) req (Just param)
 
 instance (KnownSymbol sym, ToParam (QueryParam sym a), HasDocs sub) => HasDocs (RequiredQueryParam sym a :> sub) where
   docsFor _ (endpoint, action) =
@@ -96,13 +97,13 @@ instance (KnownSymbol sym, ToParam (QueryParam sym a), HasDocs sub) => HasDocs (
           action' = over params (|> toParam paramP) action
 
 -- | SMSAero sender's signature. This is used for the "from" field.
-newtype Signature = Signature { getSignature :: Text } deriving (Eq, Show, FromJSON, ToJSON, ToText, FromText)
+newtype Signature = Signature { getSignature :: Text } deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
 
 -- | SMSAero sent message id.
-newtype MessageId = MessageId Int64 deriving (Eq, Show, FromJSON, ToJSON, ToText, FromText)
+newtype MessageId = MessageId Int64 deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
 
 -- | SMSAero message body.
-newtype MessageBody = MessageBody Text deriving (Eq, Show, FromJSON, ToJSON, ToText, FromText)
+newtype MessageBody = MessageBody Text deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
 
 -- | SMSAero authentication data.
 data SMSAeroAuth = SMSAeroAuth
@@ -122,18 +123,18 @@ instance ToJSON SMSAeroAuth where
     , "password" .= authPassword ]
 
 -- | Phone number.
-newtype Phone = Phone { getPhone :: Int64 } deriving (Eq, Show, ToText, FromText)
+newtype Phone = Phone { getPhone :: Int64 } deriving (Eq, Show, ToHttpApiData, FromHttpApiData)
 
 -- | Date. Textually @SMSAeroDate@ is represented as a number of seconds since 01 Jan 1970.
 newtype SMSAeroDate = SMSAeroDate { getSMSAeroDate :: UTCTime } deriving (Eq, Show)
 
-instance ToText SMSAeroDate where
-  toText (SMSAeroDate dt) = Text.pack (show (utcTimeToPOSIXSeconds dt))
+instance ToHttpApiData SMSAeroDate where
+  toUrlPiece (SMSAeroDate dt) = Text.pack (show (utcTimeToPOSIXSeconds dt))
 
-instance FromText SMSAeroDate where
-  fromText s = do
-    n <- fromInteger <$> readMaybe (Text.unpack s)
-    return (SMSAeroDate (posixSecondsToUTCTime n))
+instance FromHttpApiData SMSAeroDate where
+  parseUrlPiece s = do
+     n <- fromInteger <$> parseUrlPiece s
+     return (SMSAeroDate (posixSecondsToUTCTime n))
 
 -- | SMSAero authentication credentials.
 data RequireAuth
@@ -141,13 +142,12 @@ data RequireAuth
 instance HasClient sub => HasClient (RequireAuth :> sub) where
   type Client (RequireAuth :> sub) = SMSAeroAuth -> Client sub
 
-  clientWithRoute _ req baseurl SMSAeroAuth{..} =
+  clientWithRoute _ req SMSAeroAuth{..} =
     clientWithRoute
       (Proxy :: Proxy (RequiredQueryParam "user"     Text :>
                        RequiredQueryParam "password" Text :>
                        sub))
       req
-      baseurl
       authUser
       authPassword
 
@@ -171,7 +171,7 @@ data AnswerJson
 
 instance HasClient sub => HasClient (AnswerJson :> sub) where
     type Client (AnswerJson :> sub) = Client sub
-    clientWithRoute _ req baseurl = clientWithRoute (Proxy :: Proxy (RequiredQueryParam "answer" Text :> sub)) req baseurl "json"
+    clientWithRoute _ req = clientWithRoute (Proxy :: Proxy (RequiredQueryParam "answer" Text :> sub)) req "json"
 
 instance HasDocs sub => HasDocs (AnswerJson :> sub) where
   docsFor _ (endpoint, action) = docsFor subP (endpoint, action')
@@ -250,7 +250,7 @@ data SendResponse
   | SendNoCredits           -- ^ No credits to send a message.
   deriving (Eq, Show, Generic)
 
-instance ToSample (SmsAeroResponse SendResponse) (SmsAeroResponse SendResponse) where
+instance ToSample (SmsAeroResponse SendResponse) where
   toSamples _ =
     [ ("When message is sent successfully.", ResponseOK (SendAccepted (MessageId 12345)))
     , ("When SMSAero account does not have enough credit.", ResponseOK SendNoCredits)
@@ -266,7 +266,7 @@ data MessageStatus
   | StatusWaitStatus        -- ^ Wait for message status.
   deriving (Eq, Enum, Bounded, Show, Read, Generic)
 
-instance ToSample (SmsAeroResponse MessageStatus) (SmsAeroResponse MessageStatus) where
+instance ToSample (SmsAeroResponse MessageStatus) where
   toSamples _ =
     [ ("When message has been delivered successfully.", ResponseOK StatusDeliverySuccess)
     , ("When message has been queued.", ResponseOK StatusQueue) ]
@@ -275,7 +275,7 @@ instance ToSample (SmsAeroResponse MessageStatus) (SmsAeroResponse MessageStatus
 -- This is a number of available messages to send.
 newtype BalanceResponse = BalanceResponse Double deriving (Eq, Show)
 
-instance ToSample (SmsAeroResponse BalanceResponse) (SmsAeroResponse BalanceResponse) where
+instance ToSample (SmsAeroResponse BalanceResponse) where
   toSamples _ =
     [ ("Just balance.", ResponseOK (BalanceResponse 247))
     , ("When auth credentials are incorrect.", ResponseReject "incorrect user or password") ]
@@ -284,8 +284,8 @@ instance ToSample (SmsAeroResponse BalanceResponse) (SmsAeroResponse BalanceResp
 -- This is just a list of available signatures.
 newtype SendersResponse = SendersResponse [Signature] deriving (Eq, Show, FromJSON, ToJSON)
 
-instance ToSample (SmsAeroResponse SendersResponse) (SmsAeroResponse SendersResponse) where
-  toSample _ = Just (ResponseOK (SendersResponse [Signature "TEST", Signature "My Company"]))
+instance ToSample (SmsAeroResponse SendersResponse) where
+  toSamples _ = singleSample (ResponseOK (SendersResponse [Signature "TEST", Signature "My Company"]))
 
 -- | SMSAero response to a sign request.
 data SignResponse
@@ -294,7 +294,7 @@ data SignResponse
   | SignPending   -- ^ Signature is pending.
   deriving (Eq, Enum, Bounded, Show, Generic)
 
-instance ToSample (SmsAeroResponse SignResponse) (SmsAeroResponse SignResponse) where
+instance ToSample (SmsAeroResponse SignResponse) where
   toSamples _ =
     [ ("When a new signature is approved.", ResponseOK SignApproved)
     , ("When a new signature is rejected.", ResponseOK SignRejected) ]
@@ -329,32 +329,35 @@ instance ToJSON SendResponse where
   toJSON SendNoCredits = object
     [ "result" .= ("no credits" :: Text)]
 
--- | Helper to define @fromText@ matching @toText@.
-boundedFromText :: (Enum a, Bounded a, ToText a) => Text -> Maybe a
-boundedFromText = flip lookup xs
+-- | Helper to define @parseUrlPiece@ matching @toUrlPiece@.
+boundedParseUrlPiece :: (Enum a, Bounded a, ToHttpApiData a) => Text -> Either Text a
+boundedParseUrlPiece x = lookupEither ("could not parse: " <> x) x xs
   where
     vals = [minBound..maxBound]
-    xs = zip (map toText vals) vals
+    xs = zip (map toUrlPiece vals) vals
+    lookupEither e y ys = maybe (Left e) Right (lookup y ys)
 
-instance FromText MessageStatus where
-  fromText = boundedFromText
+instance FromHttpApiData MessageStatus where
+  parseUrlPiece = boundedParseUrlPiece
 
-instance ToText MessageStatus where
-  toText StatusDeliverySuccess  = "delivery success"
-  toText StatusDeliveryFailure  = "delivery failure"
-  toText StatusSmscSubmit       = "smsc submit"
-  toText StatusSmscReject       = "smsc reject"
-  toText StatusQueue            = "queue"
-  toText StatusWaitStatus       = "wait status"
+instance ToHttpApiData MessageStatus where
+  toUrlPiece StatusDeliverySuccess  = "delivery success"
+  toUrlPiece StatusDeliveryFailure  = "delivery failure"
+  toUrlPiece StatusSmscSubmit       = "smsc submit"
+  toUrlPiece StatusSmscReject       = "smsc reject"
+  toUrlPiece StatusQueue            = "queue"
+  toUrlPiece StatusWaitStatus       = "wait status"
 
 instance FromJSON MessageStatus where
   parseJSON (Object o) = do
     result :: Text <- o .: "result"
-    maybe empty pure (fromText result)
+    case (parseUrlPiece result :: Either Text MessageStatus) of
+      Left _ -> empty
+      Right status -> return status
   parseJSON _ = empty
 
 instance ToJSON MessageStatus where
-  toJSON status = object [ "result" .= toText status ]
+  toJSON status = object [ "result" .= toUrlPiece status ]
 
 instance FromJSON BalanceResponse where
   parseJSON (Object o) = BalanceResponse <$> o .: "balance"
@@ -363,19 +366,21 @@ instance FromJSON BalanceResponse where
 instance ToJSON BalanceResponse where
   toJSON (BalanceResponse n) = object [ "balance" .= n ]
 
-instance ToText SignResponse where
-  toText SignApproved = "approved"
-  toText SignRejected = "rejected"
-  toText SignPending  = "pending"
+instance ToHttpApiData SignResponse where
+  toUrlPiece SignApproved = "approved"
+  toUrlPiece SignRejected = "rejected"
+  toUrlPiece SignPending  = "pending"
 
-instance FromText SignResponse where
-  fromText = boundedFromText
+instance FromHttpApiData SignResponse where
+  parseUrlPiece = boundedParseUrlPiece
 
 instance FromJSON SignResponse where
   parseJSON (Object o) = do
     accepted :: Text <- o .: "accepted"
-    maybe empty pure (fromText accepted)
+    case (parseUrlPiece accepted :: Either Text SignResponse) of
+      Left _ -> empty
+      Right resp -> return resp
   parseJSON _ = empty
 
 instance ToJSON SignResponse where
-  toJSON s = object [ "accepted" .= toText s ]
+  toJSON s = object [ "accepted" .= toUrlPiece s ]
