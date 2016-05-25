@@ -33,6 +33,7 @@ library
                      , aeson
                      , text
                      , time
+                     , transformers
                      , lens
   default-language:    Haskell2010
 
