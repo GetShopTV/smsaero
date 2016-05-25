@@ -29,14 +29,6 @@ module SMSAero.API (
   RequireAuth,
   RequiredQueryParam,
   SmsAeroGet,
-  -- * Types
-  SMSAeroAuth(..),
-  Signature(..),
-  MessageId(..),
-  MessageBody(..),
-  Phone(..),
-  SMSAeroDate(..),
-  SendType,
   -- * Responses
   SmsAeroResponse(..),
   SendResponse(..),
@@ -47,20 +39,18 @@ module SMSAero.API (
 ) where
 
 import Data.Aeson
-import Data.Int (Int64)
 import Data.Monoid ((<>))
 import Data.Proxy
 
 import Data.Time (UTCTime(UTCTime))
 import Data.Time.Calendar (fromGregorian)
-import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds, posixSecondsToUTCTime)
+import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 
 import Data.Text (Text)
 import qualified Data.Text as Text
 
 import Control.Applicative
 import GHC.TypeLits (Symbol, KnownSymbol)
-import Text.Read (readEither)
 
 import Servant.API
 import Servant.Client
@@ -68,6 +58,8 @@ import Servant.Docs
 import Control.Lens (over, (|>))
 
 import GHC.Generics
+
+import SMSAero.Types
 
 -- | Content type for SMSAero JSON answer (it has JSON body but "text/plain" Content-Type).
 data SmsAeroJson
@@ -95,46 +87,6 @@ instance (KnownSymbol sym, ToParam (QueryParam sym a), HasDocs sub) => HasDocs (
     where subP = Proxy :: Proxy sub
           paramP = Proxy :: Proxy (QueryParam sym a)
           action' = over params (|> toParam paramP) action
-
--- | SMSAero sender's signature. This is used for the "from" field.
-newtype Signature = Signature { getSignature :: Text } deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
-
--- | SMSAero sent message id.
-newtype MessageId = MessageId Int64 deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
-
--- | SMSAero message body.
-newtype MessageBody = MessageBody Text deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
-
--- | SMSAero authentication data.
-data SMSAeroAuth = SMSAeroAuth
-  { authUser      :: Text   -- ^ Username.
-  , authPassword  :: Text   -- ^ MD5 hash of a password.
-  }
-
-instance FromJSON SMSAeroAuth where
-  parseJSON (Object o) = SMSAeroAuth
-    <$> o .: "user"
-    <*> o .: "password"
-  parseJSON _ = empty
-
-instance ToJSON SMSAeroAuth where
-  toJSON SMSAeroAuth{..} = object
-    [ "user"     .= authUser
-    , "password" .= authPassword ]
-
--- | Phone number.
-newtype Phone = Phone { getPhone :: Int64 } deriving (Eq, Show, ToHttpApiData, FromHttpApiData)
-
--- | Date. Textually @SMSAeroDate@ is represented as a number of seconds since 01 Jan 1970.
-newtype SMSAeroDate = SMSAeroDate { getSMSAeroDate :: UTCTime } deriving (Eq, Show)
-
-instance ToHttpApiData SMSAeroDate where
-  toUrlPiece (SMSAeroDate dt) = Text.pack (show (utcTimeToPOSIXSeconds dt))
-
-instance FromHttpApiData SMSAeroDate where
-  parseUrlPiece s = do
-     n <- fromInteger <$> parseUrlPiece s
-     return (SMSAeroDate (posixSecondsToUTCTime n))
 
 -- | SMSAero authentication credentials.
 data RequireAuth
@@ -193,8 +145,6 @@ type SMSAeroAPI = RequireAuth :> AnswerJson :>
   :<|> "balance"  :> SmsAeroGet BalanceResponse
   :<|> "senders"  :> SmsAeroGet SendersResponse
   :<|> "sign"     :> SmsAeroGet SignResponse)
-
-type SendType = Int
 
 -- | SMSAero API to send a message.
 type SendApi =

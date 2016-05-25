@@ -15,9 +15,10 @@ import Data.Proxy
 import Servant.API
 import Servant.Client
 
-import Network.HTTP.Client hiding (Proxy)
-
 import SMSAero.API
+import SMSAero.Types
+
+import Network.HTTP.Client (Manager)
 
 -- | SMSAero client.
 smsAeroClient :: Client SMSAeroAPI
