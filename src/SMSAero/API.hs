@@ -44,7 +44,6 @@ import Data.Proxy
 
 import Data.Time (UTCTime(UTCTime))
 import Data.Time.Calendar (fromGregorian)
-import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -175,7 +174,7 @@ instance ToParam (QueryParam "from" Signature) where
 
 instance ToParam (QueryParam "date" SMSAeroDate) where
   toParam _ = DocQueryParam "date"
-                [show (utcTimeToPOSIXSeconds (UTCTime (fromGregorian 2015 01 31) 0))]
+                [Text.unpack (toQueryParam (SMSAeroDate (UTCTime (fromGregorian 2015 01 31) 0)))]
                 "Requested datetime of delivery as number of seconds since 01 Jan 1970."
                 Normal
 
@@ -288,15 +287,15 @@ boundedParseUrlPiece x = lookupEither ("could not parse: " <> x) x xs
     lookupEither e y ys = maybe (Left e) Right (lookup y ys)
 
 instance FromHttpApiData MessageStatus where
-  parseUrlPiece = boundedParseUrlPiece
+  parseQueryParam = boundedParseUrlPiece
 
 instance ToHttpApiData MessageStatus where
-  toUrlPiece StatusDeliverySuccess  = "delivery success"
-  toUrlPiece StatusDeliveryFailure  = "delivery failure"
-  toUrlPiece StatusSmscSubmit       = "smsc submit"
-  toUrlPiece StatusSmscReject       = "smsc reject"
-  toUrlPiece StatusQueue            = "queue"
-  toUrlPiece StatusWaitStatus       = "wait status"
+  toQueryParam StatusDeliverySuccess  = "delivery success"
+  toQueryParam StatusDeliveryFailure  = "delivery failure"
+  toQueryParam StatusSmscSubmit       = "smsc submit"
+  toQueryParam StatusSmscReject       = "smsc reject"
+  toQueryParam StatusQueue            = "queue"
+  toQueryParam StatusWaitStatus       = "wait status"
 
 instance FromJSON MessageStatus where
   parseJSON (Object o) = do
@@ -317,9 +316,9 @@ instance ToJSON BalanceResponse where
   toJSON (BalanceResponse n) = object [ "balance" .= n ]
 
 instance ToHttpApiData SignResponse where
-  toUrlPiece SignApproved = "approved"
-  toUrlPiece SignRejected = "rejected"
-  toUrlPiece SignPending  = "pending"
+  toQueryParam SignApproved = "approved"
+  toQueryParam SignRejected = "rejected"
+  toQueryParam SignPending  = "pending"
 
 instance FromHttpApiData SignResponse where
   parseUrlPiece = boundedParseUrlPiece

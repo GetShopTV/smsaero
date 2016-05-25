@@ -66,11 +66,11 @@ newtype Phone = Phone { getPhone :: Int64 } deriving (Eq, Show, ToHttpApiData, F
 newtype SMSAeroDate = SMSAeroDate { getSMSAeroDate :: UTCTime } deriving (Eq, Show)
 
 instance ToHttpApiData SMSAeroDate where
-  toUrlPiece (SMSAeroDate dt) = Text.pack (show (utcTimeToPOSIXSeconds dt))
+  toQueryParam (SMSAeroDate dt) = Text.pack (show (utcTimeToPOSIXSeconds dt))
 
 instance FromHttpApiData SMSAeroDate where
-  parseUrlPiece s = do
-     n <- fromInteger <$> parseUrlPiece s
+  parseQueryParam s = do
+     n <- fromInteger <$> parseQueryParam s
      return (SMSAeroDate (posixSecondsToUTCTime n))
 
 type SendType = Int
