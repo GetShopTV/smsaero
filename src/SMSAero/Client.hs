@@ -24,7 +24,7 @@ import Network.HTTP.Client (Manager)
 smsAeroClient :: Client SMSAeroAPI
 smsAeroClient = client (Proxy :: Proxy SMSAeroAPI)
 
--- | Deafult host.
+-- | Default host @https://gate.smsaero.ru@.
 defaultBaseUrl :: BaseUrl
 defaultBaseUrl = BaseUrl Https "gate.smsaero.ru" 443 ""
 
