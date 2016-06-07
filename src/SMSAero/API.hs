@@ -54,7 +54,7 @@ import GHC.TypeLits (Symbol, KnownSymbol)
 import Servant.API
 import Servant.Client
 import Servant.Docs
-import Control.Lens (over, (|>))
+import Servant.Docs.Internal (_params)
 
 import GHC.Generics
 
@@ -85,7 +85,8 @@ instance (KnownSymbol sym, ToParam (QueryParam sym a), HasDocs sub) => HasDocs (
 
     where subP = Proxy :: Proxy sub
           paramP = Proxy :: Proxy (QueryParam sym a)
-          action' = over params (|> toParam paramP) action
+          action' = action { _params = params' }
+          params' = _params action ++ [toParam paramP]
 
 -- | SMSAero authentication credentials.
 data RequireAuth
@@ -115,7 +116,8 @@ instance HasDocs sub => HasDocs (RequireAuth :> sub) where
                     ["5f4dcc3b5aa765d61d8327deb882cf99", "d8578edf8458ce06fbc5bb76a58c5ca4"]
                     "MD5 hash of a password."
                     Normal
-          action' = over params ((|> passP) . (|> userP)) action
+          action' = action { _params = params' }
+          params' = _params action ++ [userP, passP]
 
 -- | Implicit parameter that tells SMSAero to respond with JSON.
 data AnswerJson
@@ -132,7 +134,8 @@ instance HasDocs sub => HasDocs (AnswerJson :> sub) where
                   ["json"]
                   "When present makes SMSAero REST API to respond with JSON."
                   Normal
-      action' = over params (|> answerP) action
+      action' = action { _params = params' }
+      params' = _params action ++ [answerP]
 
 -- | Regular SMSAero GET API.
 type SmsAeroGet a = Get '[SmsAeroJson] (SmsAeroResponse a)
@@ -321,7 +324,7 @@ instance ToHttpApiData SignResponse where
   toQueryParam SignPending  = "pending"
 
 instance FromHttpApiData SignResponse where
-  parseUrlPiece = boundedParseUrlPiece
+  parseQueryParam = boundedParseUrlPiece
 
 instance FromJSON SignResponse where
   parseJSON (Object o) = do
