@@ -8,7 +8,7 @@
 -- SMSAero HTTP servant client and individual client functions.
 module SMSAero.Client where
 
-import Control.Monad.Trans.Either
+import Control.Monad.Trans.Except
 
 import Data.Proxy
 
@@ -16,16 +16,20 @@ import Servant.API
 import Servant.Client
 
 import SMSAero.API
-import SMSAero.Utils
+import SMSAero.Types
+
+import Network.HTTP.Client (Manager)
 
 -- | SMSAero client.
 smsAeroClient :: Client SMSAeroAPI
-smsAeroClient = client (Proxy :: Proxy SMSAeroAPI) host
-  where
-    host = BaseUrl Https "gate.smsaero.ru" 443
+smsAeroClient = client (Proxy :: Proxy SMSAeroAPI)
+
+-- | Default host @https://gate.smsaero.ru@.
+defaultBaseUrl :: BaseUrl
+defaultBaseUrl = BaseUrl Https "gate.smsaero.ru" 443 ""
 
 -- | Common SMSAero client type.
-type SmsAero a = EitherT ServantError IO (SmsAeroResponse a)
+type SmsAero a = Manager -> BaseUrl -> ClientM (SmsAeroResponse a)
 
 -- | Send a message.
 smsAeroSend    :: SMSAeroAuth -> Phone -> MessageBody -> Signature -> Maybe SMSAeroDate -> Maybe SendType -> SmsAero SendResponse
@@ -37,9 +41,10 @@ smsAeroBalance :: SMSAeroAuth -> SmsAero BalanceResponse
 smsAeroSenders :: SMSAeroAuth -> SmsAero SendersResponse
 -- | Acquire a new signature.
 smsAeroSign    :: SMSAeroAuth -> SmsAero SignResponse
-(smsAeroSend    :<|>
- smsAeroStatus  :<|>
- smsAeroBalance :<|>
- smsAeroSenders :<|>
- smsAeroSign) = distributeClient smsAeroClient
+
+smsAeroSend    auth = let (f :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroStatus  auth = let (_ :<|> f :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroBalance auth = let (_ :<|> _ :<|> f :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroSenders auth = let (_ :<|> _ :<|> _ :<|> f :<|> _) = smsAeroClient auth in f
+smsAeroSign    auth = let (_ :<|> _ :<|> _ :<|> _ :<|> f) = smsAeroClient auth in f
 

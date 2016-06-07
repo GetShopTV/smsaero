@@ -23,16 +23,18 @@ library
     SMSAero
     SMSAero.API
     SMSAero.Client
-    SMSAero.Utils
+    SMSAero.Types
   build-depends:       base >= 4.7 && < 5
                      , either
-                     , servant        == 0.4.*
+                     , servant >= 0.7.1
                      , servant-client
                      , servant-docs
+                     , http-api-data
+                     , http-client
                      , aeson
                      , text
                      , time
-                     , lens
+                     , transformers
   default-language:    Haskell2010
 
 source-repository head

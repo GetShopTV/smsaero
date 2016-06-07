@@ -8,8 +8,10 @@
 -- SMSAero API and HTTP client.
 module SMSAero (
   module SMSAero.API,
-  module SMSAero.Client
+  module SMSAero.Client,
+  module SMSAero.Types,
 ) where
 
 import SMSAero.API
+import SMSAero.Types
 import SMSAero.Client
