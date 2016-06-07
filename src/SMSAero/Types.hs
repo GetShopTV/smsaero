@@ -73,5 +73,6 @@ instance FromHttpApiData SMSAeroDate where
      n <- fromInteger <$> parseQueryParam s
      return (SMSAeroDate (posixSecondsToUTCTime n))
 
+-- | Send type. This is used to describe send channel, equals to 2 by default (free signature for all operators except MTC).
 type SendType = Int
 
