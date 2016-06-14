@@ -14,6 +14,7 @@ module SMSAero.Types (
   Signature(..),
   MessageId(..),
   MessageBody(..),
+  Group(..),
   Phone(..),
   SMSAeroDate(..),
   SendType,
@@ -41,6 +42,9 @@ newtype MessageId = MessageId Int64 deriving (Eq, Show, FromJSON, ToJSON, ToHttp
 
 -- | SMSAero message body.
 newtype MessageBody = MessageBody Text deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
+
+-- | SMSAero group name.
+newtype Group = Group Text deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
 
 -- | SMSAero authentication data.
 data SMSAeroAuth = SMSAeroAuth

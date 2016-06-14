@@ -32,19 +32,22 @@ defaultBaseUrl = BaseUrl Https "gate.smsaero.ru" 443 ""
 type SmsAero a = Manager -> BaseUrl -> ClientM (SmsAeroResponse a)
 
 -- | Send a message.
-smsAeroSend    :: SMSAeroAuth -> Phone -> MessageBody -> Signature -> Maybe SMSAeroDate -> Maybe SendType -> SmsAero SendResponse
+smsAeroSend        :: SMSAeroAuth -> Phone -> MessageBody -> Signature -> Maybe SMSAeroDate -> Maybe SendType -> SmsAero SendResponse
+-- | Send a group message.
+smsAeroSendToGroup :: SMSAeroAuth -> Group -> MessageBody -> Signature -> Maybe SMSAeroDate -> Maybe SendType -> SmsAero SendResponse
 -- | Check status of a previously sent message.
-smsAeroStatus  :: SMSAeroAuth -> MessageId -> SmsAero MessageStatus
+smsAeroStatus      :: SMSAeroAuth -> MessageId -> SmsAero MessageStatus
 -- | Check balance.
-smsAeroBalance :: SMSAeroAuth -> SmsAero BalanceResponse
+smsAeroBalance     :: SMSAeroAuth -> SmsAero BalanceResponse
 -- | Check the list of available sender signatures.
-smsAeroSenders :: SMSAeroAuth -> SmsAero SendersResponse
+smsAeroSenders     :: SMSAeroAuth -> SmsAero SendersResponse
 -- | Acquire a new signature.
-smsAeroSign    :: SMSAeroAuth -> SmsAero SignResponse
+smsAeroSign        :: SMSAeroAuth -> SmsAero SignResponse
 
-smsAeroSend    auth = let (f :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroStatus  auth = let (_ :<|> f :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroBalance auth = let (_ :<|> _ :<|> f :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroSenders auth = let (_ :<|> _ :<|> _ :<|> f :<|> _) = smsAeroClient auth in f
-smsAeroSign    auth = let (_ :<|> _ :<|> _ :<|> _ :<|> f) = smsAeroClient auth in f
+smsAeroSend        auth = let (f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroSendToGroup auth = let (_ :<|> f :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroStatus      auth = let (_ :<|> _ :<|> f :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroBalance     auth = let (_ :<|> _ :<|> _ :<|> f :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroSenders     auth = let (_ :<|> _ :<|> _ :<|> _ :<|> f :<|> _) = smsAeroClient auth in f
+smsAeroSign        auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f) = smsAeroClient auth in f
 

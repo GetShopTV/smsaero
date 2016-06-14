@@ -142,11 +142,12 @@ type SmsAeroGet a = Get '[SmsAeroJson] (SmsAeroResponse a)
 
 -- | SMSAero API.
 type SMSAeroAPI = RequireAuth :> AnswerJson :>
-      ("send"     :> SendApi
-  :<|> "status"   :> StatusApi
-  :<|> "balance"  :> SmsAeroGet BalanceResponse
-  :<|> "senders"  :> SmsAeroGet SendersResponse
-  :<|> "sign"     :> SmsAeroGet SignResponse)
+      ("send"        :> SendApi
+  :<|> "sendtogroup" :> SendToGroupApi
+  :<|> "status"      :> StatusApi
+  :<|> "balance"     :> SmsAeroGet BalanceResponse
+  :<|> "senders"     :> SmsAeroGet SendersResponse
+  :<|> "sign"        :> SmsAeroGet SignResponse)
 
 -- | SMSAero API to send a message.
 type SendApi =
@@ -179,6 +180,21 @@ instance ToParam (QueryParam "date" SMSAeroDate) where
   toParam _ = DocQueryParam "date"
                 [Text.unpack (toQueryParam (SMSAeroDate (UTCTime (fromGregorian 2015 01 31) 0)))]
                 "Requested datetime of delivery as number of seconds since 01 Jan 1970."
+                Normal
+
+-- | SMSAero API to send a group message.
+type SendToGroupApi =
+  RequiredQueryParam "group" Group      :>
+  RequiredQueryParam "text" MessageBody :>
+  RequiredQueryParam "from" Signature   :>
+  QueryParam "date" SMSAeroDate :>
+  QueryParam "type" SendType :>
+  SmsAeroGet SendResponse
+
+instance ToParam (QueryParam "group" Group) where
+  toParam _ = DocQueryParam "group"
+                ["all", "groupname"]
+                "Grop name to broadcast a message."
                 Normal
 
 -- | SMSAero API to check message status.
