@@ -43,11 +43,17 @@ smsAeroBalance     :: SMSAeroAuth -> SmsAero BalanceResponse
 smsAeroSenders     :: SMSAeroAuth -> SmsAero SendersResponse
 -- | Acquire a new signature.
 smsAeroSign        :: SMSAeroAuth -> SmsAero SignResponse
+-- | Add a group.
+smsAeroAddGroup    :: SMSAeroAuth -> Group -> SmsAero GroupResponse
+-- | Delete a group.
+smsAeroDeleteGroup :: SMSAeroAuth -> Group -> SmsAero GroupResponse
 
-smsAeroSend        auth = let (f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroSendToGroup auth = let (_ :<|> f :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroStatus      auth = let (_ :<|> _ :<|> f :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroBalance     auth = let (_ :<|> _ :<|> _ :<|> f :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroSenders     auth = let (_ :<|> _ :<|> _ :<|> _ :<|> f :<|> _) = smsAeroClient auth in f
-smsAeroSign        auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f) = smsAeroClient auth in f
+smsAeroSend        auth = let (f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroSendToGroup auth = let (_ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroStatus      auth = let (_ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroBalance     auth = let (_ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroSenders     auth = let (_ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroSign        auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f :<|> _) = smsAeroClient auth in f
+smsAeroAddGroup    auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (f :<|> _)) = smsAeroClient auth in f
+smsAeroDeleteGroup auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (_ :<|> f)) = smsAeroClient auth in f
 

@@ -36,6 +36,7 @@ module SMSAero.API (
   BalanceResponse(..),
   SendersResponse(..),
   SignResponse(..),
+  GroupResponse(..),
 ) where
 
 import Data.Aeson
@@ -147,7 +148,8 @@ type SMSAeroAPI = RequireAuth :> AnswerJson :>
   :<|> "status"      :> StatusApi
   :<|> "balance"     :> SmsAeroGet BalanceResponse
   :<|> "senders"     :> SmsAeroGet SendersResponse
-  :<|> "sign"        :> SmsAeroGet SignResponse)
+  :<|> "sign"        :> SmsAeroGet SignResponse
+  :<|> GroupApi)
 
 -- | SMSAero API to send a message.
 type SendApi =
@@ -205,6 +207,11 @@ instance ToParam (QueryParam "id" MessageId) where
                 ["12345"]
                 "Message ID, returned previously by SMSAero."
                 Normal
+
+-- | SMSAero API to add/delete groups.
+type GroupApi =
+       "addgroup" :> RequiredQueryParam "group" Group :> SmsAeroGet GroupResponse
+  :<|> "delgroup" :> RequiredQueryParam "group" Group :> SmsAeroGet GroupResponse
 
 -- | Every SMSAero response is either rejected or provides some info.
 data SmsAeroResponse a
@@ -266,6 +273,9 @@ instance ToSample (SmsAeroResponse SignResponse) where
   toSamples _ =
     [ ("When a new signature is approved.", ResponseOK SignApproved)
     , ("When a new signature is rejected.", ResponseOK SignRejected) ]
+
+-- | SMSAero response to an addgroup/delgroup request.
+newtype GroupResponse = GroupResponse Text deriving (Eq, Show, FromJSON, ToJSON)
 
 instance FromJSON a => FromJSON (SmsAeroResponse a) where
   parseJSON (Object o) = do
@@ -352,3 +362,4 @@ instance FromJSON SignResponse where
 
 instance ToJSON SignResponse where
   toJSON s = object [ "accepted" .= toUrlPiece s ]
+
