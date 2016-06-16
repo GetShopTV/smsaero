@@ -14,9 +14,14 @@ module SMSAero.Types (
   Signature(..),
   MessageId(..),
   MessageBody(..),
+  Group(..),
   Phone(..),
   SMSAeroDate(..),
-  SendType,
+  SendType(..),
+  DigitalChannel(..),
+  Name(..),
+  BirthDate(..),
+  boundedParseUrlPiece,
 ) where
 
 import Control.Applicative (empty)
@@ -25,13 +30,16 @@ import Data.Aeson
 import Data.Int (Int64)
 
 import Data.Time (UTCTime(UTCTime))
+import Data.Time.Calendar (Day)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds, posixSecondsToUTCTime)
 
 import Data.Text (Text)
 import qualified Data.Text as Text
 import Text.Read (readEither)
 
-import Web.HttpApiData
+import Data.Monoid ((<>))
+
+import Web.HttpApiData.Internal
 
 -- | SMSAero sender's signature. This is used for the "from" field.
 newtype Signature = Signature { getSignature :: Text } deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
@@ -41,6 +49,9 @@ newtype MessageId = MessageId Int64 deriving (Eq, Show, FromJSON, ToJSON, ToHttp
 
 -- | SMSAero message body.
 newtype MessageBody = MessageBody Text deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
+
+-- | SMSAero group name.
+newtype Group = Group Text deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
 
 -- | SMSAero authentication data.
 data SMSAeroAuth = SMSAeroAuth
@@ -73,6 +84,46 @@ instance FromHttpApiData SMSAeroDate where
      n <- fromInteger <$> parseQueryParam s
      return (SMSAeroDate (posixSecondsToUTCTime n))
 
--- | Send type. This is used to describe send channel, equals to 2 by default (free signature for all operators except MTC).
-type SendType = Int
+-- | Send type. This is used to describe send channel, equals to @FreeSignatureExceptMTC@ by default.
+-- Textually @SendType@ is represented as a number from 1 to 6, excluding 5.
+data SendType
+  = PaidSignature          -- ^ Paid literal signature for all operators.
+  | FreeSignatureExceptMTC -- ^ Free literal signature for all operators except MTS.
+  | FreeSignature          -- ^ Free literal signature for all operators.
+  | InfoSignature          -- ^ Infosignature for all operators.
+  | International          -- ^ International delivery (for RU and KZ operators).
+  deriving (Eq, Show, Bounded, Enum)
+
+-- | Digital send channel. Textually represented as '1' if the parameter is present.
+data DigitalChannel = DigitalChannel
+
+instance ToHttpApiData DigitalChannel where
+  toQueryParam _ = "1"
+
+instance FromHttpApiData DigitalChannel where
+  parseQueryParam "1" = Right DigitalChannel
+  parseQueryParam x = defaultParseError x
+
+instance ToHttpApiData SendType where
+  toQueryParam PaidSignature          = "1"
+  toQueryParam FreeSignatureExceptMTC = "2"
+  toQueryParam FreeSignature          = "3"
+  toQueryParam InfoSignature          = "4"
+  toQueryParam International          = "6"
+
+instance FromHttpApiData SendType where
+  parseQueryParam = boundedParseUrlPiece
+
+-- | Helper to define @parseUrlPiece@ matching @toUrlPiece@.
+boundedParseUrlPiece :: (Enum a, Bounded a, ToHttpApiData a) => Text -> Either Text a
+boundedParseUrlPiece = parseMaybeTextData ((flip lookup) xs)
+  where
+    vals = [minBound..maxBound]
+    xs = zip (map toUrlPiece vals) vals
+
+-- | Subscriber's name.
+newtype Name = Name Text deriving (Eq, Show, ToHttpApiData, FromHttpApiData)
+
+-- | Subscriber's birth date. Textually represented in %Y-%m-%d format.
+newtype BirthDate = BirthDate Day deriving (Eq, Show, ToHttpApiData, FromHttpApiData)
 

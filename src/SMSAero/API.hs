@@ -36,10 +36,12 @@ module SMSAero.API (
   BalanceResponse(..),
   SendersResponse(..),
   SignResponse(..),
+  GroupResponse(..),
+  PhoneResponse(..),
+  BlacklistResponse(..),
 ) where
 
 import Data.Aeson
-import Data.Monoid ((<>))
 import Data.Proxy
 
 import Data.Time (UTCTime(UTCTime))
@@ -142,19 +144,24 @@ type SmsAeroGet a = Get '[SmsAeroJson] (SmsAeroResponse a)
 
 -- | SMSAero API.
 type SMSAeroAPI = RequireAuth :> AnswerJson :>
-      ("send"     :> SendApi
-  :<|> "status"   :> StatusApi
-  :<|> "balance"  :> SmsAeroGet BalanceResponse
-  :<|> "senders"  :> SmsAeroGet SendersResponse
-  :<|> "sign"     :> SmsAeroGet SignResponse)
+      ("send"         :> SendApi
+  :<|> "sendtogroup"  :> SendToGroupApi
+  :<|> "status"       :> StatusApi
+  :<|> "balance"      :> SmsAeroGet BalanceResponse
+  :<|> "senders"      :> SmsAeroGet SendersResponse
+  :<|> "sign"         :> SmsAeroGet SignResponse
+  :<|> GroupApi
+  :<|> PhoneApi
+  :<|> "addblacklist" :> RequiredQueryParam "phone" Phone :> SmsAeroGet BlacklistResponse)
 
 -- | SMSAero API to send a message.
 type SendApi =
   RequiredQueryParam "to"   Phone       :>
   RequiredQueryParam "text" MessageBody :>
   RequiredQueryParam "from" Signature   :>
-  QueryParam "date" SMSAeroDate :>
-  QueryParam "type" SendType :>
+  QueryParam "date" SMSAeroDate         :>
+  QueryParam "type" SendType            :>
+  QueryParam "digital" DigitalChannel   :>
   SmsAeroGet SendResponse
 
 instance ToParam (QueryParam "to" Phone) where
@@ -181,6 +188,34 @@ instance ToParam (QueryParam "date" SMSAeroDate) where
                 "Requested datetime of delivery as number of seconds since 01 Jan 1970."
                 Normal
 
+instance ToParam (QueryParam "type" SendType) where
+  toParam _ = DocQueryParam "type"
+              (map (Text.unpack . toQueryParam) [minBound..maxBound::SendType])
+              "Send type to describe send channel, equals to '2' (free literal signature for all operators except MTS) by default. Can't be used with 'digital' parameter."
+              Normal
+
+instance ToParam (QueryParam "digital" DigitalChannel) where
+  toParam _ = DocQueryParam "digital"
+              [Text.unpack (toQueryParam DigitalChannel)]
+              "Send type for digital send channel. Can't be used with 'type' parameter."
+              Normal
+
+-- | SMSAero API to send a group message.
+type SendToGroupApi =
+  RequiredQueryParam "group" Group      :>
+  RequiredQueryParam "text" MessageBody :>
+  RequiredQueryParam "from" Signature   :>
+  QueryParam "date" SMSAeroDate         :>
+  QueryParam "type" SendType            :>
+  QueryParam "digital" DigitalChannel   :>
+  SmsAeroGet SendResponse
+
+instance ToParam (QueryParam "group" Group) where
+  toParam _ = DocQueryParam "group"
+                ["all", "groupname"]
+                "Group name to broadcast a message."
+                Normal
+
 -- | SMSAero API to check message status.
 type StatusApi = RequiredQueryParam "id" MessageId :> SmsAeroGet MessageStatus
 
@@ -189,6 +224,27 @@ instance ToParam (QueryParam "id" MessageId) where
                 ["12345"]
                 "Message ID, returned previously by SMSAero."
                 Normal
+
+-- | SMSAero API to add/delete groups.
+type GroupApi =
+       "checkgroup" :> SmsAeroGet [Group]
+  :<|> "addgroup"   :> RequiredQueryParam "group" Group :> SmsAeroGet GroupResponse
+  :<|> "delgroup"   :> RequiredQueryParam "group" Group :> SmsAeroGet GroupResponse
+
+-- | SMSAero API to add/delete subscribers.
+type PhoneApi =
+       "addphone" :> WithSubscribersParams (SmsAeroGet PhoneResponse)
+  :<|> "delphone" :> WithSubscribersParams (SmsAeroGet PhoneResponse)
+
+-- | Query parameters for subscriber's info.
+type WithSubscribersParams api =
+  RequiredQueryParam "phone" Phone :>
+  QueryParam "group" Group         :>
+  QueryParam "lname" Name          :>
+  QueryParam "fname" Name          :>
+  QueryParam "sname" Name          :>
+  QueryParam "bday"  BirthDate     :>
+  QueryParam "param" Text          :> api
 
 -- | Every SMSAero response is either rejected or provides some info.
 data SmsAeroResponse a
@@ -251,6 +307,15 @@ instance ToSample (SmsAeroResponse SignResponse) where
     [ ("When a new signature is approved.", ResponseOK SignApproved)
     , ("When a new signature is rejected.", ResponseOK SignRejected) ]
 
+-- | SMSAero response to an addgroup/delgroup request.
+newtype GroupResponse = GroupResponse Text deriving (Eq, Show, FromJSON, ToJSON)
+
+-- | SMSAero response to an addphone/delphone request.
+newtype PhoneResponse = PhoneResponse Text deriving (Eq, Show, FromJSON, ToJSON)
+
+-- | SMSAero response to an addblacklist request.
+newtype BlacklistResponse = BlacklistResponse Text deriving (Eq, Show, FromJSON, ToJSON)
+
 instance FromJSON a => FromJSON (SmsAeroResponse a) where
   parseJSON (Object o) = do
     result :: Maybe Text <- o .:? "result"
@@ -280,14 +345,6 @@ instance ToJSON SendResponse where
     , "id"     .= toJSON n ]
   toJSON SendNoCredits = object
     [ "result" .= ("no credits" :: Text)]
-
--- | Helper to define @parseUrlPiece@ matching @toUrlPiece@.
-boundedParseUrlPiece :: (Enum a, Bounded a, ToHttpApiData a) => Text -> Either Text a
-boundedParseUrlPiece x = lookupEither ("could not parse: " <> x) x xs
-  where
-    vals = [minBound..maxBound]
-    xs = zip (map toUrlPiece vals) vals
-    lookupEither e y ys = maybe (Left e) Right (lookup y ys)
 
 instance FromHttpApiData MessageStatus where
   parseQueryParam = boundedParseUrlPiece
@@ -336,3 +393,4 @@ instance FromJSON SignResponse where
 
 instance ToJSON SignResponse where
   toJSON s = object [ "accepted" .= toUrlPiece s ]
+
