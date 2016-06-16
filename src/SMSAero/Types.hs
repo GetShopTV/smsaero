@@ -27,6 +27,7 @@ import Data.Aeson
 import Data.Int (Int64)
 
 import Data.Time (UTCTime(UTCTime))
+import Data.Time.Calendar (Day)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds, posixSecondsToUTCTime)
 
 import Data.Text (Text)
@@ -91,8 +92,11 @@ data SendType
   deriving (Eq, Show, Bounded, Enum)
 
 instance ToHttpApiData SendType where
-  toQueryParam International = "6"
-  toQueryParam t = Text.pack . show . succ . fromEnum $ t
+  toQueryParam PaidSignature          = "1"
+  toQueryParam FreeSignatureExceptMTC = "2"
+  toQueryParam FreeSignature          = "3"
+  toQueryParam InfoSignature          = "4"
+  toQueryParam International          = "6"
 
 instance FromHttpApiData SendType where
   parseQueryParam = boundedParseUrlPiece
@@ -103,4 +107,10 @@ boundedParseUrlPiece = parseMaybeTextData ((flip lookup) xs)
   where
     vals = [minBound..maxBound]
     xs = zip (map toUrlPiece vals) vals
+
+-- | Subscriber's name.
+newtype Name = Name Text deriving (Eq, Show, ToHttpApiData, FromHttpApiData)
+
+-- | Subscriber's birth date. Textually represented in %Y-%m-%d format.
+newtype BirthDate = BirthDate Day deriving (Eq, Show, ToHttpApiData, FromHttpApiData)
 
