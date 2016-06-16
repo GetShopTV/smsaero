@@ -37,6 +37,7 @@ module SMSAero.API (
   SendersResponse(..),
   SignResponse(..),
   GroupResponse(..),
+  PhoneResponse(..),
 ) where
 
 import Data.Aeson
@@ -148,7 +149,8 @@ type SMSAeroAPI = RequireAuth :> AnswerJson :>
   :<|> "balance"     :> SmsAeroGet BalanceResponse
   :<|> "senders"     :> SmsAeroGet SendersResponse
   :<|> "sign"        :> SmsAeroGet SignResponse
-  :<|> GroupApi)
+  :<|> GroupApi
+  :<|> PhoneApi)
 
 -- | SMSAero API to send a message.
 type SendApi =
@@ -211,6 +213,20 @@ instance ToParam (QueryParam "id" MessageId) where
 type GroupApi =
        "addgroup" :> RequiredQueryParam "group" Group :> SmsAeroGet GroupResponse
   :<|> "delgroup" :> RequiredQueryParam "group" Group :> SmsAeroGet GroupResponse
+
+-- | SMSAero API to add/delete subscribers.
+type PhoneApi =
+       "addphone" :> WithSubscribersParams (SmsAeroGet PhoneResponse)
+  :<|> "delphone" :> WithSubscribersParams (SmsAeroGet PhoneResponse)
+
+type WithSubscribersParams api =
+  RequiredQueryParam "phone" Phone :>
+  QueryParam "group" Group         :>
+  QueryParam "lname" Name          :>
+  QueryParam "fname" Name          :>
+  QueryParam "sname" Name          :>
+  QueryParam "bday"  BirthDate     :>
+  QueryParam "param" Text          :> api
 
 -- | Every SMSAero response is either rejected or provides some info.
 data SmsAeroResponse a
@@ -275,6 +291,9 @@ instance ToSample (SmsAeroResponse SignResponse) where
 
 -- | SMSAero response to an addgroup/delgroup request.
 newtype GroupResponse = GroupResponse Text deriving (Eq, Show, FromJSON, ToJSON)
+
+-- | SMSAero response to an addphone/delphone request.
+newtype PhoneResponse = PhoneResponse Text deriving (Eq, Show, FromJSON, ToJSON)
 
 instance FromJSON a => FromJSON (SmsAeroResponse a) where
   parseJSON (Object o) = do

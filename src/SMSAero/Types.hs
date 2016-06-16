@@ -18,6 +18,8 @@ module SMSAero.Types (
   Phone(..),
   SMSAeroDate(..),
   SendType(..),
+  Name(..),
+  BirthDate(..),
   boundedParseUrlPiece,
 ) where
 
