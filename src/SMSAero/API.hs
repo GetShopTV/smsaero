@@ -211,8 +211,9 @@ instance ToParam (QueryParam "id" MessageId) where
 
 -- | SMSAero API to add/delete groups.
 type GroupApi =
-       "addgroup" :> RequiredQueryParam "group" Group :> SmsAeroGet GroupResponse
-  :<|> "delgroup" :> RequiredQueryParam "group" Group :> SmsAeroGet GroupResponse
+       "checkgroup" :> SmsAeroGet [Group]
+  :<|> "addgroup"   :> RequiredQueryParam "group" Group :> SmsAeroGet GroupResponse
+  :<|> "delgroup"   :> RequiredQueryParam "group" Group :> SmsAeroGet GroupResponse
 
 -- | SMSAero API to add/delete subscribers.
 type PhoneApi =
