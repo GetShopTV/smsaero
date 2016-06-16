@@ -35,7 +35,7 @@ import Text.Read (readEither)
 
 import Data.Monoid ((<>))
 
-import Web.HttpApiData
+import Web.HttpApiData.Internal
 
 -- | SMSAero sender's signature. This is used for the "from" field.
 newtype Signature = Signature { getSignature :: Text } deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
@@ -81,6 +81,7 @@ instance FromHttpApiData SMSAeroDate where
      return (SMSAeroDate (posixSecondsToUTCTime n))
 
 -- | Send type. This is used to describe send channel, equals to @FreeSignatureExceptMTC@ by default.
+-- Textually @SendType@ is represented as a number from 1 to 6, excluding 5.
 data SendType
   = PaidSignature          -- ^ Paid literal signature for all operators.
   | FreeSignatureExceptMTC -- ^ Free literal signature for all operators except MTS.
@@ -98,9 +99,8 @@ instance FromHttpApiData SendType where
 
 -- | Helper to define @parseUrlPiece@ matching @toUrlPiece@.
 boundedParseUrlPiece :: (Enum a, Bounded a, ToHttpApiData a) => Text -> Either Text a
-boundedParseUrlPiece x = lookupEither ("could not parse: " <> x) x xs
+boundedParseUrlPiece = parseMaybeTextData ((flip lookup) xs)
   where
     vals = [minBound..maxBound]
     xs = zip (map toUrlPiece vals) vals
-    lookupEither e y ys = maybe (Left e) Right (lookup y ys)
 
