@@ -18,6 +18,7 @@ module SMSAero.Types (
   Phone(..),
   SMSAeroDate(..),
   SendType(..),
+  DigitalChannel(..),
   Name(..),
   BirthDate(..),
   boundedParseUrlPiece,
@@ -92,6 +93,16 @@ data SendType
   | InfoSignature          -- ^ Infosignature for all operators.
   | International          -- ^ International delivery (for RU and KZ operators).
   deriving (Eq, Show, Bounded, Enum)
+
+-- | Digital send channel. Textually represented as '1' if the parameter is present.
+data DigitalChannel = DigitalChannel
+
+instance ToHttpApiData DigitalChannel where
+  toQueryParam _ = "1"
+
+instance FromHttpApiData DigitalChannel where
+  parseQueryParam "1" = Right DigitalChannel
+  parseQueryParam x = defaultParseError x
 
 instance ToHttpApiData SendType where
   toQueryParam PaidSignature          = "1"

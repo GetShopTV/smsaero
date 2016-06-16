@@ -33,9 +33,9 @@ defaultBaseUrl = BaseUrl Https "gate.smsaero.ru" 443 ""
 type SmsAero a = Manager -> BaseUrl -> ClientM (SmsAeroResponse a)
 
 -- | Send a message.
-smsAeroSend        :: SMSAeroAuth -> Phone -> MessageBody -> Signature -> Maybe SMSAeroDate -> Maybe SendType -> SmsAero SendResponse
+smsAeroSend        :: SMSAeroAuth -> Phone -> MessageBody -> Signature -> Maybe SMSAeroDate -> Maybe SendType -> Maybe DigitalChannel -> SmsAero SendResponse
 -- | Send a group message.
-smsAeroSendToGroup :: SMSAeroAuth -> Group -> MessageBody -> Signature -> Maybe SMSAeroDate -> Maybe SendType -> SmsAero SendResponse
+smsAeroSendToGroup :: SMSAeroAuth -> Group -> MessageBody -> Signature -> Maybe SMSAeroDate -> Maybe SendType -> Maybe DigitalChannel -> SmsAero SendResponse
 -- | Check status of a previously sent message.
 smsAeroStatus      :: SMSAeroAuth -> MessageId -> SmsAero MessageStatus
 -- | Check balance.

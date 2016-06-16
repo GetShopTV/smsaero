@@ -159,8 +159,9 @@ type SendApi =
   RequiredQueryParam "to"   Phone       :>
   RequiredQueryParam "text" MessageBody :>
   RequiredQueryParam "from" Signature   :>
-  QueryParam "date" SMSAeroDate :>
-  QueryParam "type" SendType :>
+  QueryParam "date" SMSAeroDate         :>
+  QueryParam "type" SendType            :>
+  QueryParam "digital" DigitalChannel   :>
   SmsAeroGet SendResponse
 
 instance ToParam (QueryParam "to" Phone) where
@@ -190,7 +191,13 @@ instance ToParam (QueryParam "date" SMSAeroDate) where
 instance ToParam (QueryParam "type" SendType) where
   toParam _ = DocQueryParam "type"
               (map (Text.unpack . toQueryParam) [minBound..maxBound::SendType])
-              "Send type to describe send channel, equals to '2' by default."
+              "Send type to describe send channel, equals to '2' by default. Can't be used with 'digital' parameter."
+              Normal
+
+instance ToParam (QueryParam "digital" DigitalChannel) where
+  toParam _ = DocQueryParam "digital"
+              ["1"]
+              "Send type for digital send channel. Can't be used with 'type' parameter."
               Normal
 
 -- | SMSAero API to send a group message.
@@ -198,8 +205,9 @@ type SendToGroupApi =
   RequiredQueryParam "group" Group      :>
   RequiredQueryParam "text" MessageBody :>
   RequiredQueryParam "from" Signature   :>
-  QueryParam "date" SMSAeroDate :>
-  QueryParam "type" SendType :>
+  QueryParam "date" SMSAeroDate         :>
+  QueryParam "type" SendType            :>
+  QueryParam "digital" DigitalChannel   :>
   SmsAeroGet SendResponse
 
 instance ToParam (QueryParam "group" Group) where
