@@ -187,6 +187,12 @@ instance ToParam (QueryParam "date" SMSAeroDate) where
                 "Requested datetime of delivery as number of seconds since 01 Jan 1970."
                 Normal
 
+instance ToParam (QueryParam "type" SendType) where
+  toParam _ = DocQueryParam "type"
+              (map (Text.unpack . toQueryParam) [minBound..maxBound::SendType])
+              "Send type to describe send channel, equals to '2' by default."
+              Normal
+
 -- | SMSAero API to send a group message.
 type SendToGroupApi =
   RequiredQueryParam "group" Group      :>
