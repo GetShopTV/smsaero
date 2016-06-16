@@ -17,7 +17,8 @@ module SMSAero.Types (
   Group(..),
   Phone(..),
   SMSAeroDate(..),
-  SendType,
+  SendType(..),
+  boundedParseUrlPiece,
 ) where
 
 import Control.Applicative (empty)
@@ -31,6 +32,8 @@ import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds, posixSecondsToUTCTime)
 import Data.Text (Text)
 import qualified Data.Text as Text
 import Text.Read (readEither)
+
+import Data.Monoid ((<>))
 
 import Web.HttpApiData
 
@@ -77,6 +80,27 @@ instance FromHttpApiData SMSAeroDate where
      n <- fromInteger <$> parseQueryParam s
      return (SMSAeroDate (posixSecondsToUTCTime n))
 
--- | Send type. This is used to describe send channel, equals to 2 by default (free signature for all operators except MTC).
-type SendType = Int
+-- | Send type. This is used to describe send channel, equals to @FreeSignatureExceptMTC@ by default.
+data SendType
+  = PaidSignature          -- ^ Paid literal signature for all operators.
+  | FreeSignatureExceptMTC -- ^ Free literal signature for all operators except MTS.
+  | FreeSignature          -- ^ Free literal signature for all operators.
+  | InfoSignature          -- ^ Infosignature for all operators.
+  | International          -- ^ International delivery (for RU and KZ operators).
+  deriving (Eq, Show, Bounded, Enum)
+
+instance ToHttpApiData SendType where
+  toQueryParam International = "6"
+  toQueryParam t = Text.pack . show . succ . fromEnum $ t
+
+instance FromHttpApiData SendType where
+  parseQueryParam = boundedParseUrlPiece
+
+-- | Helper to define @parseUrlPiece@ matching @toUrlPiece@.
+boundedParseUrlPiece :: (Enum a, Bounded a, ToHttpApiData a) => Text -> Either Text a
+boundedParseUrlPiece x = lookupEither ("could not parse: " <> x) x xs
+  where
+    vals = [minBound..maxBound]
+    xs = zip (map toUrlPiece vals) vals
+    lookupEither e y ys = maybe (Left e) Right (lookup y ys)
 

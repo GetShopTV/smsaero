@@ -40,7 +40,6 @@ module SMSAero.API (
 ) where
 
 import Data.Aeson
-import Data.Monoid ((<>))
 import Data.Proxy
 
 import Data.Time (UTCTime(UTCTime))
@@ -306,14 +305,6 @@ instance ToJSON SendResponse where
     , "id"     .= toJSON n ]
   toJSON SendNoCredits = object
     [ "result" .= ("no credits" :: Text)]
-
--- | Helper to define @parseUrlPiece@ matching @toUrlPiece@.
-boundedParseUrlPiece :: (Enum a, Bounded a, ToHttpApiData a) => Text -> Either Text a
-boundedParseUrlPiece x = lookupEither ("could not parse: " <> x) x xs
-  where
-    vals = [minBound..maxBound]
-    xs = zip (map toUrlPiece vals) vals
-    lookupEither e y ys = maybe (Left e) Right (lookup y ys)
 
 instance FromHttpApiData MessageStatus where
   parseQueryParam = boundedParseUrlPiece
