@@ -38,6 +38,7 @@ module SMSAero.API (
   SignResponse(..),
   GroupResponse(..),
   PhoneResponse(..),
+  BlacklistResponse(..),
 ) where
 
 import Data.Aeson
@@ -143,14 +144,15 @@ type SmsAeroGet a = Get '[SmsAeroJson] (SmsAeroResponse a)
 
 -- | SMSAero API.
 type SMSAeroAPI = RequireAuth :> AnswerJson :>
-      ("send"        :> SendApi
-  :<|> "sendtogroup" :> SendToGroupApi
-  :<|> "status"      :> StatusApi
-  :<|> "balance"     :> SmsAeroGet BalanceResponse
-  :<|> "senders"     :> SmsAeroGet SendersResponse
-  :<|> "sign"        :> SmsAeroGet SignResponse
+      ("send"         :> SendApi
+  :<|> "sendtogroup"  :> SendToGroupApi
+  :<|> "status"       :> StatusApi
+  :<|> "balance"      :> SmsAeroGet BalanceResponse
+  :<|> "senders"      :> SmsAeroGet SendersResponse
+  :<|> "sign"         :> SmsAeroGet SignResponse
   :<|> GroupApi
-  :<|> PhoneApi)
+  :<|> PhoneApi
+  :<|> "addblacklist" :> RequiredQueryParam "phone" Phone :> SmsAeroGet BlacklistResponse)
 
 -- | SMSAero API to send a message.
 type SendApi =
@@ -295,6 +297,9 @@ newtype GroupResponse = GroupResponse Text deriving (Eq, Show, FromJSON, ToJSON)
 
 -- | SMSAero response to an addphone/delphone request.
 newtype PhoneResponse = PhoneResponse Text deriving (Eq, Show, FromJSON, ToJSON)
+
+-- | SMSAero response to an addblacklist request.
+newtype BlacklistResponse = BlacklistResponse Text deriving (Eq, Show, FromJSON, ToJSON)
 
 instance FromJSON a => FromJSON (SmsAeroResponse a) where
   parseJSON (Object o) = do
