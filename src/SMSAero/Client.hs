@@ -33,29 +33,82 @@ defaultBaseUrl = BaseUrl Https "gate.smsaero.ru" 443 ""
 type SmsAero a = Manager -> BaseUrl -> ClientM (SmsAeroResponse a)
 
 -- | Send a message.
-smsAeroSend        :: SMSAeroAuth -> Phone -> MessageBody -> Signature -> Maybe SMSAeroDate -> Maybe SendType -> Maybe DigitalChannel -> SmsAero SendResponse
+smsAeroSend :: SMSAeroAuth          -- ^ Authentication data (login and MD5 hash of password).
+            -> Phone                -- ^ Phone number to send a message to.
+            -> MessageBody          -- ^ Message text.
+            -> Signature            -- ^ Sender's signature used for the "from" field.
+            -> Maybe SMSAeroDate    -- ^ Date stating when to send a postponed message.
+            -> Maybe SendType       -- ^ Send channel description.
+            -> Maybe DigitalChannel -- ^ Use digital send channel.
+            -> SmsAero SendResponse
+
 -- | Send a group message.
-smsAeroSendToGroup :: SMSAeroAuth -> Group -> MessageBody -> Signature -> Maybe SMSAeroDate -> Maybe SendType -> Maybe DigitalChannel -> SmsAero SendResponse
+smsAeroSendToGroup :: SMSAeroAuth          -- ^ Authentication data (login and MD5 hash of password).
+                   -> Group                -- ^ Group name for broadcasting a message.
+                   -> MessageBody          -- ^ Message text.
+                   -> Signature            -- ^ Sender's signature used for the "from" field.
+                   -> Maybe SMSAeroDate    -- ^ Date stating when to send a postponed message.
+                   -> Maybe SendType       -- ^ Send channel description.
+                   -> Maybe DigitalChannel -- ^ Use digital send channel.
+                   -> SmsAero SendResponse
+
 -- | Check status of a previously sent message.
-smsAeroStatus      :: SMSAeroAuth -> MessageId -> SmsAero MessageStatus
+smsAeroStatus :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
+              -> MessageId   -- ^ Message ID.
+              -> SmsAero MessageStatus
+
 -- | Check balance.
-smsAeroBalance     :: SMSAeroAuth -> SmsAero BalanceResponse
+smsAeroBalance :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
+               -> SmsAero BalanceResponse
+
 -- | Check the list of available sender signatures.
-smsAeroSenders     :: SMSAeroAuth -> SmsAero SendersResponse
+smsAeroSenders :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
+               -> SmsAero SendersResponse
+
 -- | Acquire a new signature.
-smsAeroSign        :: SMSAeroAuth -> SmsAero SignResponse
+smsAeroSign :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
+            -> SmsAero SignResponse
+
 -- | Get groups list.
-smsAeroListGroups  :: SMSAeroAuth -> SmsAero [Group]
+smsAeroListGroups :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
+                  -> SmsAero [Group]
+
 -- | Add a group.
-smsAeroAddGroup    :: SMSAeroAuth -> Group -> SmsAero GroupResponse
+smsAeroAddGroup :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
+                -> Group       -- ^ Name for the new group.
+                -> SmsAero GroupResponse
+
 -- | Delete a group.
-smsAeroDeleteGroup :: SMSAeroAuth -> Group -> SmsAero GroupResponse
+smsAeroDeleteGroup :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
+                   -> Group       -- ^ Name of the group to be deleted.
+                   -> SmsAero GroupResponse
+
 -- | Add a phone to contact list or group.
-smsAeroAddPhone    :: SMSAeroAuth -> Phone -> Maybe Group -> Maybe Name -> Maybe Name -> Maybe Name -> Maybe BirthDate -> Maybe Text -> SmsAero PhoneResponse
+smsAeroAddPhone :: SMSAeroAuth     -- ^ Authentication data (login and MD5 hash of password).
+                -> Phone           -- ^ Subscriber's phone number.
+                -> Maybe Group     -- ^ Contact group.
+                -> Maybe Name      -- ^ Subscriber's last name.
+                -> Maybe Name      -- ^ Subscriber's first name.
+                -> Maybe Name      -- ^ Subscriber's middle name.
+                -> Maybe BirthDate -- ^ Subscriber's birth date.
+                -> Maybe Text      -- ^ Any additional information.
+                -> SmsAero PhoneResponse
+
 -- | Delete a phone from contact list or group.
-smsAeroDeletePhone :: SMSAeroAuth -> Phone -> Maybe Group -> Maybe Name -> Maybe Name -> Maybe Name -> Maybe BirthDate -> Maybe Text -> SmsAero PhoneResponse
+smsAeroDeletePhone :: SMSAeroAuth     -- ^ Authentication data (login and MD5 hash of password).
+                   -> Phone           -- ^ Subscriber's phone number.
+                   -> Maybe Group     -- ^ Contact group.
+                   -> Maybe Name      -- ^ Subscriber's last name.
+                   -> Maybe Name      -- ^ Subscriber's first name.
+                   -> Maybe Name      -- ^ Subscriber's middle name.
+                   -> Maybe BirthDate -- ^ Subscriber's birth date.
+                   -> Maybe Text      -- ^ Any additional information.
+                   -> SmsAero PhoneResponse
+
 -- | Add a phone number to blacklist.
-smsAeroBlacklist   :: SMSAeroAuth -> Phone -> SmsAero BlacklistResponse
+smsAeroBlacklist :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password)
+                 -> Phone       -- ^ Phone number to be added to blacklist.
+                 -> SmsAero BlacklistResponse
 
 smsAeroSend        auth = let (f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
 smsAeroSendToGroup auth = let (_ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f

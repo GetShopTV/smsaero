@@ -191,12 +191,12 @@ instance ToParam (QueryParam "date" SMSAeroDate) where
 instance ToParam (QueryParam "type" SendType) where
   toParam _ = DocQueryParam "type"
               (map (Text.unpack . toQueryParam) [minBound..maxBound::SendType])
-              "Send type to describe send channel, equals to '2' by default. Can't be used with 'digital' parameter."
+              "Send type to describe send channel, equals to '2' (free literal signature for all operators except MTS) by default. Can't be used with 'digital' parameter."
               Normal
 
 instance ToParam (QueryParam "digital" DigitalChannel) where
   toParam _ = DocQueryParam "digital"
-              ["1"]
+              [Text.unpack (toQueryParam DigitalChannel)]
               "Send type for digital send channel. Can't be used with 'type' parameter."
               Normal
 
@@ -213,7 +213,7 @@ type SendToGroupApi =
 instance ToParam (QueryParam "group" Group) where
   toParam _ = DocQueryParam "group"
                 ["all", "groupname"]
-                "Grop name to broadcast a message."
+                "Group name to broadcast a message."
                 Normal
 
 -- | SMSAero API to check message status.
@@ -236,6 +236,7 @@ type PhoneApi =
        "addphone" :> WithSubscribersParams (SmsAeroGet PhoneResponse)
   :<|> "delphone" :> WithSubscribersParams (SmsAeroGet PhoneResponse)
 
+-- | Query parameters for subscriber's info.
 type WithSubscribersParams api =
   RequiredQueryParam "phone" Phone :>
   QueryParam "group" Group         :>
