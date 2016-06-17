@@ -6,7 +6,33 @@
 -- Stability   : experimental
 --
 -- SMSAero HTTP servant client and individual client functions.
-module SMSAero.Client where
+module SMSAero.Client (
+  -- * Client
+  smsAeroClient,
+  defaultBaseUrl,
+  SmsAero(..),
+  -- * Sending a message
+  smsAeroSend,
+  smsAeroSendToGroup,
+  -- * Checking status
+  smsAeroStatus,
+  smsAeroCheckSending,
+  -- * Checking balance and tariff
+  smsAeroBalance,
+  smsAeroCheckTariff,
+  -- * Signatures
+  smsAeroSenders,
+  smsAeroSign,
+  -- * Groups
+  smsAeroListGroups,
+  smsAeroAddGroup,
+  smsAeroDeleteGroup,
+  -- * Contacts
+  smsAeroAddPhone,
+  smsAeroDeletePhone,
+  -- * Blacklist
+  smsAeroBlacklist,
+) where
 
 import Control.Monad.Trans.Except
 
