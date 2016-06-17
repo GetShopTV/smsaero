@@ -26,6 +26,7 @@ module SMSAero.API (
   StatusApi,
   GroupApi,
   PhoneApi,
+  BlacklistApi,
   -- * Combinators
   SmsAeroJson,
   AnswerJson,
@@ -166,7 +167,7 @@ type SMSAeroAPI = RequireAuth :> AnswerJson :>
   :<|> "sign"         :> SmsAeroGet SignResponse
   :<|> GroupApi
   :<|> PhoneApi
-  :<|> "addblacklist" :> RequiredQueryParam "phone" Phone :> SmsAeroGet BlacklistResponse)
+  :<|> "addblacklist" :> BlacklistApi)
 
 -- | SMSAero API to send a message.
 type SendApi =
@@ -260,6 +261,9 @@ type PhoneApi =
        QueryParam "param" Text          :>
        SmsAeroGet PhoneResponse
   :<|> "delphone" :> RequiredQueryParam "phone" Phone :> QueryParam "group" Group :> SmsAeroGet PhoneResponse
+
+-- | SMSAero API to add phone to blacklist.
+type BlacklistApi = RequiredQueryParam "phone" Phone :> SmsAeroGet BlacklistResponse
 
 -- | Every SMSAero response is either rejected or provides some info.
 data SmsAeroResponse a
