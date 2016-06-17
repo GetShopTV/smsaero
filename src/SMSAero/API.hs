@@ -22,7 +22,10 @@ module SMSAero.API (
   -- * API
   SMSAeroAPI,
   SendApi,
+  SendToGroupApi,
   StatusApi,
+  GroupApi,
+  PhoneApi,
   -- * Combinators
   SmsAeroJson,
   AnswerJson,
@@ -233,18 +236,16 @@ type GroupApi =
 
 -- | SMSAero API to add/delete subscribers.
 type PhoneApi =
-       "addphone" :> WithSubscribersParams (SmsAeroGet PhoneResponse)
-  :<|> "delphone" :> WithSubscribersParams (SmsAeroGet PhoneResponse)
-
--- | Query parameters for subscriber's info.
-type WithSubscribersParams api =
-  RequiredQueryParam "phone" Phone :>
-  QueryParam "group" Group         :>
-  QueryParam "lname" Name          :>
-  QueryParam "fname" Name          :>
-  QueryParam "sname" Name          :>
-  QueryParam "bday"  BirthDate     :>
-  QueryParam "param" Text          :> api
+       "addphone"                       :>
+       RequiredQueryParam "phone" Phone :>
+       QueryParam "group" Group         :>
+       QueryParam "lname" Name          :>
+       QueryParam "fname" Name          :>
+       QueryParam "sname" Name          :>
+       QueryParam "bday"  BirthDate     :>
+       QueryParam "param" Text          :>
+       SmsAeroGet PhoneResponse
+  :<|> "delphone" :> RequiredQueryParam "phone" Phone :> QueryParam "group" Group :> SmsAeroGet PhoneResponse
 
 -- | Every SMSAero response is either rejected or provides some info.
 data SmsAeroResponse a
