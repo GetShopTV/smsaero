@@ -18,6 +18,7 @@ extra-source-files:
 cabal-version:       >=1.10
 
 library
+  ghc-options: -Wall
   hs-source-dirs:      src
   exposed-modules:
     SMSAero
@@ -25,7 +26,6 @@ library
     SMSAero.Client
     SMSAero.Types
   build-depends:       base >= 4.7 && < 5
-                     , either
                      , servant >= 0.7.1
                      , servant-client
                      , servant-docs
@@ -34,7 +34,6 @@ library
                      , aeson
                      , text
                      , time
-                     , transformers
                      , containers
   default-language:    Haskell2010
 

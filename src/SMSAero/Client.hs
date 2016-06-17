@@ -10,7 +10,7 @@ module SMSAero.Client (
   -- * Client
   smsAeroClient,
   defaultBaseUrl,
-  SmsAero(..),
+  SmsAero,
   -- * Sending a message
   smsAeroSend,
   smsAeroSendToGroup,
@@ -31,10 +31,8 @@ module SMSAero.Client (
   smsAeroAddPhone,
   smsAeroDeletePhone,
   -- * Blacklist
-  smsAeroBlacklist,
+  smsAeroAddToBlacklist,
 ) where
-
-import Control.Monad.Trans.Except
 
 import Data.Proxy
 import Data.Text (Text)
@@ -136,22 +134,22 @@ smsAeroDeletePhone :: SMSAeroAuth     -- ^ Authentication data (login and MD5 ha
                    -> SmsAero PhoneResponse
 
 -- | Add a phone number to blacklist.
-smsAeroBlacklist :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password)
-                 -> Phone       -- ^ Phone number to be added to blacklist.
-                 -> SmsAero BlacklistResponse
+smsAeroAddToBlacklist :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password)
+                      -> Phone       -- ^ Phone number to be added to blacklist.
+                      -> SmsAero BlacklistResponse
 
-smsAeroSend         auth = let (f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroSendToGroup  auth = let (_ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroStatus       auth = let (_ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroCheckSending auth = let (_ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroBalance      auth = let (_ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroCheckTariff  auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroSenders      auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroSign         auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroListGroups   auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (f :<|> _ :<|> _) :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroAddGroup     auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (_ :<|> f :<|> _) :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroDeleteGroup  auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (_ :<|> _ :<|> f) :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroAddPhone     auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (f :<|> _) :<|> _) = smsAeroClient auth in f
-smsAeroDeletePhone  auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (_ :<|> f) :<|> _) = smsAeroClient auth in f
-smsAeroBlacklist    auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f) = smsAeroClient auth in f
+smsAeroSend           auth = let (f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroSendToGroup    auth = let (_ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroStatus         auth = let (_ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroCheckSending   auth = let (_ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroBalance        auth = let (_ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroCheckTariff    auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroSenders        auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroSign           auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroListGroups     auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (f :<|> _ :<|> _) :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroAddGroup       auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (_ :<|> f :<|> _) :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroDeleteGroup    auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (_ :<|> _ :<|> f) :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroAddPhone       auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (f :<|> _) :<|> _) = smsAeroClient auth in f
+smsAeroDeletePhone    auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (_ :<|> f) :<|> _) = smsAeroClient auth in f
+smsAeroAddToBlacklist auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f) = smsAeroClient auth in f
 

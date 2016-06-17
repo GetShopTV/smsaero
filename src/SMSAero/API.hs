@@ -1,3 +1,4 @@
+{-# OPTIONS -fno-warn-orphans #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -37,9 +38,9 @@ module SMSAero.API (
   SmsAeroResponse(..),
   SendResponse(..),
   MessageStatus(..),
-  CheckSendingResponse(..),
+  CheckSendingResponse,
   BalanceResponse(..),
-  CheckTariffResponse(..),
+  CheckTariffResponse,
   SendersResponse(..),
   SignResponse(..),
   GroupResponse(..),
@@ -422,9 +423,8 @@ instance ToJSON CheckSendingResponse where
   toJSON = toJSON . Map.mapKeys toQueryParam . fmap toQueryParam
 
 instance FromJSON CheckSendingResponse where
-  parseJSON js@(Object o) =
+  parseJSON js =
     Map.fromList . catMaybes . map dist . map (parseQueryParamMaybe *** parseQueryParamMaybe) . Map.toList <$> parseJSON js
     where
       dist (x, y) = (,) <$> x <*> y
-  parseJSON _ = empty
 

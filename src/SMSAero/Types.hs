@@ -21,7 +21,7 @@ module SMSAero.Types (
   DigitalChannel(..),
   Name(..),
   BirthDate(..),
-  ChannelName(..),
+  ChannelName,
 ) where
 
 import Control.Applicative (empty)
@@ -29,15 +29,12 @@ import Control.Applicative (empty)
 import Data.Aeson
 import Data.Int (Int64)
 
-import Data.Time (UTCTime(UTCTime))
+import Data.Time (UTCTime)
 import Data.Time.Calendar (Day)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds, posixSecondsToUTCTime)
 
 import Data.Text (Text)
 import qualified Data.Text as Text
-import Text.Read (readEither)
-
-import Data.Monoid ((<>))
 
 import Web.HttpApiData.Internal
 
