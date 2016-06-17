@@ -36,6 +36,7 @@ module SMSAero.API (
   SmsAeroResponse(..),
   SendResponse(..),
   MessageStatus(..),
+  CheckSendingResponse(..),
   BalanceResponse(..),
   CheckTariffResponse(..),
   SendersResponse(..),
@@ -57,7 +58,7 @@ import qualified Data.Text as Text
 import Data.Map (Map)
 import qualified Data.Map as Map
 
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isJust, fromJust)
 
 import Control.Applicative
 import GHC.TypeLits (Symbol, KnownSymbol)
@@ -158,6 +159,7 @@ type SMSAeroAPI = RequireAuth :> AnswerJson :>
       ("send"         :> SendApi
   :<|> "sendtogroup"  :> SendToGroupApi
   :<|> "status"       :> StatusApi
+  :<|> "checksending" :> CheckSendingApi
   :<|> "balance"      :> SmsAeroGet BalanceResponse
   :<|> "checktarif"   :> SmsAeroGet CheckTariffResponse
   :<|> "senders"      :> SmsAeroGet SendersResponse
@@ -237,6 +239,9 @@ instance ToParam (QueryParam "id" MessageId) where
                 "Message ID, returned previously by SMSAero."
                 Normal
 
+-- | SMSAero API to check broadcast status.
+type CheckSendingApi = RequiredQueryParam "id" MessageId :> SmsAeroGet CheckSendingResponse
+
 -- | SMSAero API to add/delete groups.
 type GroupApi =
        "checkgroup" :> SmsAeroGet [Group]
@@ -299,6 +304,9 @@ instance ToSample (SmsAeroResponse BalanceResponse) where
 
 -- | SMSAero response to a checktarif request.
 type CheckTariffResponse = Map ChannelName Double
+
+-- | SMSAero response to a checksending request.
+type CheckSendingResponse = Map MessageId MessageStatus
 
 -- This is just a list of available signatures.
 newtype SendersResponse = SendersResponse [Signature] deriving (Eq, Show, FromJSON, ToJSON)
@@ -405,3 +413,13 @@ instance FromJSON SignResponse where
 instance ToJSON SignResponse where
   toJSON s = object [ "accepted" .= toUrlPiece s ]
 
+instance ToJSON CheckSendingResponse where
+  toJSON = toJSON . Map.mapKeys toQueryParam . fmap toQueryParam
+
+instance FromJSON CheckSendingResponse where
+  parseJSON js@(Object o) = do
+    m <- Map.mapMaybe parseQueryParamMaybe . Map.mapKeys parseQueryParamMaybe <$> parseJSON js
+    return $ Map.mapKeys fromJust (Map.filterWithKey (\k _ -> isJust k) m)
+  parseJSON _ = empty
+
+  
