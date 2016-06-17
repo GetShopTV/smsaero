@@ -21,7 +21,6 @@ module SMSAero.Types (
   DigitalChannel(..),
   Name(..),
   BirthDate(..),
-  boundedParseUrlPiece,
 ) where
 
 import Control.Applicative (empty)
@@ -112,14 +111,7 @@ instance ToHttpApiData SendType where
   toQueryParam International          = "6"
 
 instance FromHttpApiData SendType where
-  parseQueryParam = boundedParseUrlPiece
-
--- | Helper to define @parseUrlPiece@ matching @toUrlPiece@.
-boundedParseUrlPiece :: (Enum a, Bounded a, ToHttpApiData a) => Text -> Either Text a
-boundedParseUrlPiece = parseMaybeTextData ((flip lookup) xs)
-  where
-    vals = [minBound..maxBound]
-    xs = zip (map toUrlPiece vals) vals
+  parseQueryParam = parseBoundedQueryParam
 
 -- | Subscriber's name.
 newtype Name = Name Text deriving (Eq, Show, ToHttpApiData, FromHttpApiData)

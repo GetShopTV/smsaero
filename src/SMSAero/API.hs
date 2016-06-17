@@ -64,6 +64,8 @@ import Servant.Client
 import Servant.Docs
 import Servant.Docs.Internal (_params)
 
+import Web.HttpApiData
+
 import GHC.Generics
 
 import SMSAero.Types
@@ -380,7 +382,7 @@ instance ToJSON CheckTariffResponse where
     ]
 
 instance FromHttpApiData MessageStatus where
-  parseQueryParam = boundedParseUrlPiece
+  parseQueryParam = parseBoundedQueryParam
 
 instance ToHttpApiData MessageStatus where
   toQueryParam StatusDeliverySuccess  = "delivery success"
@@ -414,7 +416,7 @@ instance ToHttpApiData SignResponse where
   toQueryParam SignPending  = "pending"
 
 instance FromHttpApiData SignResponse where
-  parseQueryParam = boundedParseUrlPiece
+  parseQueryParam = parseBoundedQueryParam
 
 instance FromJSON SignResponse where
   parseJSON (Object o) = do
