@@ -21,6 +21,7 @@ module SMSAero.Types (
   DigitalChannel(..),
   Name(..),
   BirthDate(..),
+  ChannelName(..),
 ) where
 
 import Control.Applicative (empty)
@@ -51,6 +52,9 @@ newtype MessageBody = MessageBody Text deriving (Eq, Show, FromJSON, ToJSON, ToH
 
 -- | SMSAero group name.
 newtype Group = Group Text deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
+
+-- | SMSAero channel name.
+type ChannelName = Text
 
 -- | SMSAero authentication data.
 data SMSAeroAuth = SMSAeroAuth

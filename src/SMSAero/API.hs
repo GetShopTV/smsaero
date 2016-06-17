@@ -54,6 +54,9 @@ import Data.Time.Calendar (fromGregorian)
 import Data.Text (Text)
 import qualified Data.Text as Text
 
+import Data.Map (Map)
+import qualified Data.Map as Map
+
 import Data.Maybe (fromMaybe)
 
 import Control.Applicative
@@ -295,10 +298,7 @@ instance ToSample (SmsAeroResponse BalanceResponse) where
     , ("When auth credentials are incorrect.", ResponseReject "incorrect user or password") ]
 
 -- | SMSAero response to a checktarif request.
-data CheckTariffResponse = CheckTariffResponse
-  { directChannel  :: Double -- ^ Price in rubles of one message sent on direct channel.
-  , digitalChannel :: Double -- ^ Price in rubles of one message sent on digital channel.
-  } deriving (Eq, Show)
+type CheckTariffResponse = Map ChannelName Double
 
 -- This is just a list of available signatures.
 newtype SendersResponse = SendersResponse [Signature] deriving (Eq, Show, FromJSON, ToJSON)
@@ -356,30 +356,6 @@ instance ToJSON SendResponse where
     , "id"     .= toJSON n ]
   toJSON SendNoCredits = object
     [ "result" .= ("no credits" :: Text)]
-
-instance FromJSON CheckTariffResponse where
-  parseJSON (Object o) = do
-    result :: Text <- o .: "result"
-    case result of
-      "accepted" -> do
-        reason <- o .: "reason"
-        mresp <- do
-          case reason of
-            (Object obj) -> do
-              dir :: Maybe Double <- obj .:? "Direct channel"
-              dig :: Maybe Double <- obj .:? "Digital channel"
-              return (CheckTariffResponse <$> dir <*> dig)
-            _ -> return Nothing
-        maybe empty return mresp
-      _          -> empty
-
-instance ToJSON CheckTariffResponse where
-  toJSON (CheckTariffResponse dir dig) = object
-    [ "result" .= ("accepted" :: Text)
-    , "reason" .= object
-      [ "Direct channel"  .= toJSON dir
-      , "Digital channel" .= toJSON dig]
-    ]
 
 instance FromHttpApiData MessageStatus where
   parseQueryParam = parseBoundedQueryParam
