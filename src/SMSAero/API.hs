@@ -37,6 +37,7 @@ module SMSAero.API (
   SendResponse(..),
   MessageStatus(..),
   BalanceResponse(..),
+  CheckTariffResponse(..),
   SendersResponse(..),
   SignResponse(..),
   GroupResponse(..),
@@ -52,6 +53,8 @@ import Data.Time.Calendar (fromGregorian)
 
 import Data.Text (Text)
 import qualified Data.Text as Text
+
+import Data.Maybe (fromMaybe)
 
 import Control.Applicative
 import GHC.TypeLits (Symbol, KnownSymbol)
@@ -151,6 +154,7 @@ type SMSAeroAPI = RequireAuth :> AnswerJson :>
   :<|> "sendtogroup"  :> SendToGroupApi
   :<|> "status"       :> StatusApi
   :<|> "balance"      :> SmsAeroGet BalanceResponse
+  :<|> "checktarif"   :> SmsAeroGet CheckTariffResponse
   :<|> "senders"      :> SmsAeroGet SendersResponse
   :<|> "sign"         :> SmsAeroGet SignResponse
   :<|> GroupApi
@@ -280,8 +284,7 @@ instance ToSample (SmsAeroResponse MessageStatus) where
     [ ("When message has been delivered successfully.", ResponseOK StatusDeliverySuccess)
     , ("When message has been queued.", ResponseOK StatusQueue) ]
 
--- | SMSAero response to a balance request.
--- This is a number of available messages to send.
+-- | SMSAero response to a balance request (balance in rubles).
 newtype BalanceResponse = BalanceResponse Double deriving (Eq, Show)
 
 instance ToSample (SmsAeroResponse BalanceResponse) where
@@ -289,7 +292,12 @@ instance ToSample (SmsAeroResponse BalanceResponse) where
     [ ("Just balance.", ResponseOK (BalanceResponse 247))
     , ("When auth credentials are incorrect.", ResponseReject "incorrect user or password") ]
 
--- | SMSAero response to a senders request.
+-- | SMSAero response to a checktarif request.
+data CheckTariffResponse = CheckTariffResponse
+  { directChannel  :: Double -- ^ Price in rubles of one message sent on direct channel.
+  , digitalChannel :: Double -- ^ Price in rubles of one message sent on digital channel.
+  } deriving (Eq, Show)
+
 -- This is just a list of available signatures.
 newtype SendersResponse = SendersResponse [Signature] deriving (Eq, Show, FromJSON, ToJSON)
 
@@ -346,6 +354,30 @@ instance ToJSON SendResponse where
     , "id"     .= toJSON n ]
   toJSON SendNoCredits = object
     [ "result" .= ("no credits" :: Text)]
+
+instance FromJSON CheckTariffResponse where
+  parseJSON (Object o) = do
+    result :: Text <- o .: "result"
+    case result of
+      "accepted" -> do
+        reason <- o .: "reason"
+        mresp <- do
+          case reason of
+            (Object obj) -> do
+              dir :: Maybe Double <- obj .:? "Direct channel"
+              dig :: Maybe Double <- obj .:? "Digital channel"
+              return (CheckTariffResponse <$> dir <*> dig)
+            _ -> return Nothing
+        maybe empty return mresp
+      _          -> empty
+
+instance ToJSON CheckTariffResponse where
+  toJSON (CheckTariffResponse dir dig) = object
+    [ "result" .= ("accepted" :: Text)
+    , "reason" .= object
+      [ "Direct channel"  .= toJSON dir
+      , "Digital channel" .= toJSON dig]
+    ]
 
 instance FromHttpApiData MessageStatus where
   parseQueryParam = boundedParseUrlPiece
