@@ -59,9 +59,10 @@ import qualified Data.Text as Text
 import Data.Map (Map)
 import qualified Data.Map as Map
 
-import Data.Maybe (fromMaybe, isJust, fromJust)
+import Data.Maybe (catMaybes)
 
 import Control.Applicative
+import Control.Arrow ((***))
 import GHC.TypeLits (Symbol, KnownSymbol)
 
 import Servant.API
@@ -421,9 +422,9 @@ instance ToJSON CheckSendingResponse where
   toJSON = toJSON . Map.mapKeys toQueryParam . fmap toQueryParam
 
 instance FromJSON CheckSendingResponse where
-  parseJSON js@(Object o) = do
-    m <- Map.mapMaybe parseQueryParamMaybe . Map.mapKeys parseQueryParamMaybe <$> parseJSON js
-    return $ Map.mapKeys fromJust (Map.filterWithKey (\k _ -> isJust k) m)
+  parseJSON js@(Object o) =
+    Map.fromList . catMaybes . map dist . map (parseQueryParamMaybe *** parseQueryParamMaybe) . Map.toList <$> parseJSON js
+    where
+      dist (x, y) = (,) <$> x <*> y
   parseJSON _ = empty
 
-  
