@@ -21,7 +21,7 @@ module SMSAero.Types (
   DigitalChannel(..),
   Name(..),
   BirthDate(..),
-  boundedParseUrlPiece,
+  ChannelName(..),
 ) where
 
 import Control.Applicative (empty)
@@ -45,13 +45,16 @@ import Web.HttpApiData.Internal
 newtype Signature = Signature { getSignature :: Text } deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
 
 -- | SMSAero sent message id.
-newtype MessageId = MessageId Int64 deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
+newtype MessageId = MessageId Int64 deriving (Eq, Show, Ord, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
 
 -- | SMSAero message body.
 newtype MessageBody = MessageBody Text deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
 
 -- | SMSAero group name.
 newtype Group = Group Text deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
+
+-- | SMSAero channel name.
+type ChannelName = Text
 
 -- | SMSAero authentication data.
 data SMSAeroAuth = SMSAeroAuth
@@ -112,14 +115,7 @@ instance ToHttpApiData SendType where
   toQueryParam International          = "6"
 
 instance FromHttpApiData SendType where
-  parseQueryParam = boundedParseUrlPiece
-
--- | Helper to define @parseUrlPiece@ matching @toUrlPiece@.
-boundedParseUrlPiece :: (Enum a, Bounded a, ToHttpApiData a) => Text -> Either Text a
-boundedParseUrlPiece = parseMaybeTextData ((flip lookup) xs)
-  where
-    vals = [minBound..maxBound]
-    xs = zip (map toUrlPiece vals) vals
+  parseQueryParam = parseBoundedQueryParam
 
 -- | Subscriber's name.
 newtype Name = Name Text deriving (Eq, Show, ToHttpApiData, FromHttpApiData)

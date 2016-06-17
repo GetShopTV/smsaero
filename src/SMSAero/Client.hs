@@ -6,7 +6,33 @@
 -- Stability   : experimental
 --
 -- SMSAero HTTP servant client and individual client functions.
-module SMSAero.Client where
+module SMSAero.Client (
+  -- * Client
+  smsAeroClient,
+  defaultBaseUrl,
+  SmsAero(..),
+  -- * Sending a message
+  smsAeroSend,
+  smsAeroSendToGroup,
+  -- * Checking status
+  smsAeroStatus,
+  smsAeroCheckSending,
+  -- * Checking balance and tariff
+  smsAeroBalance,
+  smsAeroCheckTariff,
+  -- * Signatures
+  smsAeroSenders,
+  smsAeroSign,
+  -- * Groups
+  smsAeroListGroups,
+  smsAeroAddGroup,
+  smsAeroDeleteGroup,
+  -- * Contacts
+  smsAeroAddPhone,
+  smsAeroDeletePhone,
+  -- * Blacklist
+  smsAeroBlacklist,
+) where
 
 import Control.Monad.Trans.Except
 
@@ -57,9 +83,18 @@ smsAeroStatus :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of pas
               -> MessageId   -- ^ Message ID.
               -> SmsAero MessageStatus
 
+-- | Check status of a broadcast.
+smsAeroCheckSending :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
+                    -> MessageId   -- ^ Broadcast ID.
+                    -> SmsAero CheckSendingResponse
+
 -- | Check balance.
 smsAeroBalance :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
                -> SmsAero BalanceResponse
+
+-- | Check tariff.
+smsAeroCheckTariff :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
+                   -> SmsAero CheckTariffResponse
 
 -- | Check the list of available sender signatures.
 smsAeroSenders :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
@@ -69,7 +104,7 @@ smsAeroSenders :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of pa
 smsAeroSign :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
             -> SmsAero SignResponse
 
--- | Get groups list.
+-- | Get groups list (corresponds to 'checkgroup' endpoint).
 smsAeroListGroups :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
                   -> SmsAero [Group]
 
@@ -105,16 +140,18 @@ smsAeroBlacklist :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of 
                  -> Phone       -- ^ Phone number to be added to blacklist.
                  -> SmsAero BlacklistResponse
 
-smsAeroSend        auth = let (f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroSendToGroup auth = let (_ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroStatus      auth = let (_ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroBalance     auth = let (_ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroSenders     auth = let (_ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroSign        auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroListGroups  auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (f :<|> _ :<|> _) :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroAddGroup    auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (_ :<|> f :<|> _) :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroDeleteGroup auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (_ :<|> _ :<|> f) :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroAddPhone    auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _  :<|> (f :<|> _) :<|> _) = smsAeroClient auth in f
-smsAeroDeletePhone auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _  :<|> (_ :<|> f) :<|> _) = smsAeroClient auth in f
-smsAeroBlacklist   auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f) = smsAeroClient auth in f
+smsAeroSend         auth = let (f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroSendToGroup  auth = let (_ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroStatus       auth = let (_ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroCheckSending auth = let (_ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroBalance      auth = let (_ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroCheckTariff  auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroSenders      auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroSign         auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroListGroups   auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (f :<|> _ :<|> _) :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroAddGroup     auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (_ :<|> f :<|> _) :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroDeleteGroup  auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (_ :<|> _ :<|> f) :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroAddPhone     auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (f :<|> _) :<|> _) = smsAeroClient auth in f
+smsAeroDeletePhone  auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (_ :<|> f) :<|> _) = smsAeroClient auth in f
+smsAeroBlacklist    auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f) = smsAeroClient auth in f
 

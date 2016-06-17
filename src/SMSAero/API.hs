@@ -26,6 +26,7 @@ module SMSAero.API (
   StatusApi,
   GroupApi,
   PhoneApi,
+  BlacklistApi,
   -- * Combinators
   SmsAeroJson,
   AnswerJson,
@@ -36,7 +37,9 @@ module SMSAero.API (
   SmsAeroResponse(..),
   SendResponse(..),
   MessageStatus(..),
+  CheckSendingResponse(..),
   BalanceResponse(..),
+  CheckTariffResponse(..),
   SendersResponse(..),
   SignResponse(..),
   GroupResponse(..),
@@ -53,13 +56,21 @@ import Data.Time.Calendar (fromGregorian)
 import Data.Text (Text)
 import qualified Data.Text as Text
 
+import Data.Map (Map)
+import qualified Data.Map as Map
+
+import Data.Maybe (catMaybes)
+
 import Control.Applicative
+import Control.Arrow ((***))
 import GHC.TypeLits (Symbol, KnownSymbol)
 
 import Servant.API
 import Servant.Client
 import Servant.Docs
 import Servant.Docs.Internal (_params)
+
+import Web.HttpApiData
 
 import GHC.Generics
 
@@ -150,12 +161,14 @@ type SMSAeroAPI = RequireAuth :> AnswerJson :>
       ("send"         :> SendApi
   :<|> "sendtogroup"  :> SendToGroupApi
   :<|> "status"       :> StatusApi
+  :<|> "checksending" :> CheckSendingApi
   :<|> "balance"      :> SmsAeroGet BalanceResponse
+  :<|> "checktarif"   :> SmsAeroGet CheckTariffResponse
   :<|> "senders"      :> SmsAeroGet SendersResponse
   :<|> "sign"         :> SmsAeroGet SignResponse
   :<|> GroupApi
   :<|> PhoneApi
-  :<|> "addblacklist" :> RequiredQueryParam "phone" Phone :> SmsAeroGet BlacklistResponse)
+  :<|> "addblacklist" :> BlacklistApi)
 
 -- | SMSAero API to send a message.
 type SendApi =
@@ -228,6 +241,9 @@ instance ToParam (QueryParam "id" MessageId) where
                 "Message ID, returned previously by SMSAero."
                 Normal
 
+-- | SMSAero API to check broadcast status.
+type CheckSendingApi = RequiredQueryParam "id" MessageId :> SmsAeroGet CheckSendingResponse
+
 -- | SMSAero API to add/delete groups.
 type GroupApi =
        "checkgroup" :> SmsAeroGet [Group]
@@ -246,6 +262,9 @@ type PhoneApi =
        QueryParam "param" Text          :>
        SmsAeroGet PhoneResponse
   :<|> "delphone" :> RequiredQueryParam "phone" Phone :> QueryParam "group" Group :> SmsAeroGet PhoneResponse
+
+-- | SMSAero API to add phone to blacklist.
+type BlacklistApi = RequiredQueryParam "phone" Phone :> SmsAeroGet BlacklistResponse
 
 -- | Every SMSAero response is either rejected or provides some info.
 data SmsAeroResponse a
@@ -280,8 +299,7 @@ instance ToSample (SmsAeroResponse MessageStatus) where
     [ ("When message has been delivered successfully.", ResponseOK StatusDeliverySuccess)
     , ("When message has been queued.", ResponseOK StatusQueue) ]
 
--- | SMSAero response to a balance request.
--- This is a number of available messages to send.
+-- | SMSAero response to a balance request (balance in rubles).
 newtype BalanceResponse = BalanceResponse Double deriving (Eq, Show)
 
 instance ToSample (SmsAeroResponse BalanceResponse) where
@@ -289,7 +307,12 @@ instance ToSample (SmsAeroResponse BalanceResponse) where
     [ ("Just balance.", ResponseOK (BalanceResponse 247))
     , ("When auth credentials are incorrect.", ResponseReject "incorrect user or password") ]
 
--- | SMSAero response to a senders request.
+-- | SMSAero response to a checktarif request.
+type CheckTariffResponse = Map ChannelName Double
+
+-- | SMSAero response to a checksending request.
+type CheckSendingResponse = Map MessageId MessageStatus
+
 -- This is just a list of available signatures.
 newtype SendersResponse = SendersResponse [Signature] deriving (Eq, Show, FromJSON, ToJSON)
 
@@ -348,7 +371,7 @@ instance ToJSON SendResponse where
     [ "result" .= ("no credits" :: Text)]
 
 instance FromHttpApiData MessageStatus where
-  parseQueryParam = boundedParseUrlPiece
+  parseQueryParam = parseBoundedQueryParam
 
 instance ToHttpApiData MessageStatus where
   toQueryParam StatusDeliverySuccess  = "delivery success"
@@ -382,7 +405,7 @@ instance ToHttpApiData SignResponse where
   toQueryParam SignPending  = "pending"
 
 instance FromHttpApiData SignResponse where
-  parseQueryParam = boundedParseUrlPiece
+  parseQueryParam = parseBoundedQueryParam
 
 instance FromJSON SignResponse where
   parseJSON (Object o) = do
@@ -394,4 +417,14 @@ instance FromJSON SignResponse where
 
 instance ToJSON SignResponse where
   toJSON s = object [ "accepted" .= toUrlPiece s ]
+
+instance ToJSON CheckSendingResponse where
+  toJSON = toJSON . Map.mapKeys toQueryParam . fmap toQueryParam
+
+instance FromJSON CheckSendingResponse where
+  parseJSON js@(Object o) =
+    Map.fromList . catMaybes . map dist . map (parseQueryParamMaybe *** parseQueryParamMaybe) . Map.toList <$> parseJSON js
+    where
+      dist (x, y) = (,) <$> x <*> y
+  parseJSON _ = empty
 
