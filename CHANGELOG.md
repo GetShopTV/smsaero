@@ -1,3 +1,11 @@
+0.5
+---
+* Switch to `servant-0.7` (see [#5](https://github.com/GetShopTV/smsaero/pull/5));
+* Update to the latest SMSAero API (see [#7](https://github.com/GetShopTV/smsaero/pull/7) and [#9](https://github.com/GetShopTV/smsaero/pull/9) and [#10](https://github.com/GetShopTV/smsaero/pull/10)):
+  * Add `type` parameter;
+  * Add groups, contacts and blacklist API;
+  * Add API for tarif and message status checking.
+
 0.4.1
 ---
 * Add `Eq` instances
