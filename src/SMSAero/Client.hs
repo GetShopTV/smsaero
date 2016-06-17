@@ -86,7 +86,7 @@ smsAeroDeleteGroup :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash o
 -- | Add a phone to contact list or group.
 smsAeroAddPhone :: SMSAeroAuth     -- ^ Authentication data (login and MD5 hash of password).
                 -> Phone           -- ^ Subscriber's phone number.
-                -> Maybe Group     -- ^ Contact group.
+                -> Maybe Group     -- ^ Contact group. If absent, contact will be added to general contact list.
                 -> Maybe Name      -- ^ Subscriber's last name.
                 -> Maybe Name      -- ^ Subscriber's first name.
                 -> Maybe Name      -- ^ Subscriber's middle name.
@@ -97,12 +97,7 @@ smsAeroAddPhone :: SMSAeroAuth     -- ^ Authentication data (login and MD5 hash 
 -- | Delete a phone from contact list or group.
 smsAeroDeletePhone :: SMSAeroAuth     -- ^ Authentication data (login and MD5 hash of password).
                    -> Phone           -- ^ Subscriber's phone number.
-                   -> Maybe Group     -- ^ Contact group.
-                   -> Maybe Name      -- ^ Subscriber's last name.
-                   -> Maybe Name      -- ^ Subscriber's first name.
-                   -> Maybe Name      -- ^ Subscriber's middle name.
-                   -> Maybe BirthDate -- ^ Subscriber's birth date.
-                   -> Maybe Text      -- ^ Any additional information.
+                   -> Maybe Group     -- ^ Group to remove contact from. If absent, contact will be deleted from general contact list.
                    -> SmsAero PhoneResponse
 
 -- | Add a phone number to blacklist.
