@@ -1,3 +1,7 @@
+0.6
+---
+* Change client function types (see [#11](https://github.com/GetShopTV/smsaero/pull/11)).
+
 0.5
 ---
 * Switch to `servant-0.7` (see [#5](https://github.com/GetShopTV/smsaero/pull/5));

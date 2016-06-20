@@ -11,26 +11,26 @@ module SMSAero.Client (
   smsAeroClient,
   defaultBaseUrl,
   SmsAero,
-  -- * Sending a message
+  -- ** Sending a message
   smsAeroSend,
   smsAeroSendToGroup,
-  -- * Checking status
+  -- ** Checking status
   smsAeroStatus,
   smsAeroCheckSending,
-  -- * Checking balance and tariff
+  -- ** Checking balance and tariff
   smsAeroBalance,
   smsAeroCheckTariff,
-  -- * Signatures
+  -- ** Signatures
   smsAeroSenders,
   smsAeroSign,
-  -- * Groups
+  -- ** Groups
   smsAeroListGroups,
   smsAeroAddGroup,
   smsAeroDeleteGroup,
-  -- * Contacts
+  -- ** Contacts
   smsAeroAddPhone,
   smsAeroDeletePhone,
-  -- * Blacklist
+  -- ** Blacklist
   smsAeroAddToBlacklist,
 ) where
 
@@ -166,23 +166,20 @@ smsAeroAddToBlacklist :: SMSAeroAuth -- ^ Authentication data (login and MD5 has
                       -> SmsAero BlacklistResponse
 smsAeroAddToBlacklist auth p manager = smsAeroAddToBlacklist_ auth p manager defaultBaseUrl
 
--- | Common SMSAero client type.
-type SmsAero' a = Manager -> BaseUrl -> SmsAero a
-
-smsAeroSend_ :: SMSAeroAuth -> Phone -> MessageBody -> Signature -> Maybe SMSAeroDate -> Maybe SendType -> Maybe DigitalChannel -> SmsAero' SendResponse
-smsAeroSendToGroup_ :: SMSAeroAuth -> Group -> MessageBody -> Signature -> Maybe SMSAeroDate -> Maybe SendType -> Maybe DigitalChannel -> SmsAero' SendResponse
-smsAeroStatus_ :: SMSAeroAuth -> MessageId -> SmsAero' MessageStatus
-smsAeroCheckSending_ :: SMSAeroAuth -> MessageId -> SmsAero' CheckSendingResponse
-smsAeroBalance_ :: SMSAeroAuth -> SmsAero' BalanceResponse
-smsAeroCheckTariff_ :: SMSAeroAuth -> SmsAero' CheckTariffResponse
-smsAeroSenders_ :: SMSAeroAuth -> SmsAero' SendersResponse
-smsAeroSign_ :: SMSAeroAuth -> SmsAero' SignResponse
-smsAeroListGroups_ :: SMSAeroAuth -> SmsAero' [Group]
-smsAeroAddGroup_ :: SMSAeroAuth -> Group -> SmsAero' GroupResponse
-smsAeroDeleteGroup_ :: SMSAeroAuth -> Group -> SmsAero' GroupResponse
-smsAeroAddPhone_ :: SMSAeroAuth -> Phone -> Maybe Group -> Maybe Name -> Maybe Name -> Maybe Name -> Maybe BirthDate -> Maybe Text -> SmsAero' PhoneResponse
-smsAeroDeletePhone_ :: SMSAeroAuth -> Phone -> Maybe Group -> SmsAero' PhoneResponse
-smsAeroAddToBlacklist_ :: SMSAeroAuth -> Phone -> SmsAero' BlacklistResponse
+smsAeroSend_ :: SMSAeroAuth -> Phone -> MessageBody -> Signature -> Maybe SMSAeroDate -> Maybe SendType -> Maybe DigitalChannel -> Manager -> BaseUrl -> SmsAero SendResponse
+smsAeroSendToGroup_ :: SMSAeroAuth -> Group -> MessageBody -> Signature -> Maybe SMSAeroDate -> Maybe SendType -> Maybe DigitalChannel -> Manager -> BaseUrl -> SmsAero SendResponse
+smsAeroStatus_ :: SMSAeroAuth -> MessageId -> Manager -> BaseUrl -> SmsAero MessageStatus
+smsAeroCheckSending_ :: SMSAeroAuth -> MessageId -> Manager -> BaseUrl -> SmsAero CheckSendingResponse
+smsAeroBalance_ :: SMSAeroAuth -> Manager -> BaseUrl -> SmsAero BalanceResponse
+smsAeroCheckTariff_ :: SMSAeroAuth -> Manager -> BaseUrl -> SmsAero CheckTariffResponse
+smsAeroSenders_ :: SMSAeroAuth -> Manager -> BaseUrl -> SmsAero SendersResponse
+smsAeroSign_ :: SMSAeroAuth -> Manager -> BaseUrl -> SmsAero SignResponse
+smsAeroListGroups_ :: SMSAeroAuth -> Manager -> BaseUrl -> SmsAero [Group]
+smsAeroAddGroup_ :: SMSAeroAuth -> Group -> Manager -> BaseUrl -> SmsAero GroupResponse
+smsAeroDeleteGroup_ :: SMSAeroAuth -> Group -> Manager -> BaseUrl -> SmsAero GroupResponse
+smsAeroAddPhone_ :: SMSAeroAuth -> Phone -> Maybe Group -> Maybe Name -> Maybe Name -> Maybe Name -> Maybe BirthDate -> Maybe Text -> Manager -> BaseUrl -> SmsAero PhoneResponse
+smsAeroDeletePhone_ :: SMSAeroAuth -> Phone -> Maybe Group -> Manager -> BaseUrl -> SmsAero PhoneResponse
+smsAeroAddToBlacklist_ :: SMSAeroAuth -> Phone -> Manager -> BaseUrl -> SmsAero BlacklistResponse
 
 smsAeroSend_           auth = let (f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
 smsAeroSendToGroup_    auth = let (_ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
