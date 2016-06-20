@@ -53,8 +53,8 @@ smsAeroClient = client (Proxy :: Proxy SMSAeroAPI)
 defaultBaseUrl :: BaseUrl
 defaultBaseUrl = BaseUrl Https "gate.smsaero.ru" 443 ""
 
--- | Common SMSAero client type.
-type SmsAero a = Manager -> BaseUrl -> ClientM (SmsAeroResponse a)
+-- | Common SMSAero client response type.
+type SmsAero a = ClientM (SmsAeroResponse a)
 
 -- | Send a message.
 smsAeroSend :: SMSAeroAuth          -- ^ Authentication data (login and MD5 hash of password).
@@ -64,7 +64,9 @@ smsAeroSend :: SMSAeroAuth          -- ^ Authentication data (login and MD5 hash
             -> Maybe SMSAeroDate    -- ^ Date stating when to send a postponed message.
             -> Maybe SendType       -- ^ Send channel description.
             -> Maybe DigitalChannel -- ^ Use digital send channel.
+            -> Manager              -- ^ Connection manager.
             -> SmsAero SendResponse
+smsAeroSend auth p m s md mt mdig manager = smsAeroSend_ auth p m s md mt mdig manager defaultBaseUrl
 
 -- | Send a group message.
 smsAeroSendToGroup :: SMSAeroAuth          -- ^ Authentication data (login and MD5 hash of password).
@@ -74,47 +76,67 @@ smsAeroSendToGroup :: SMSAeroAuth          -- ^ Authentication data (login and M
                    -> Maybe SMSAeroDate    -- ^ Date stating when to send a postponed message.
                    -> Maybe SendType       -- ^ Send channel description.
                    -> Maybe DigitalChannel -- ^ Use digital send channel.
+                   -> Manager              -- ^ Connection manager.
                    -> SmsAero SendResponse
+smsAeroSendToGroup auth g m s md mt mdig manager = smsAeroSendToGroup_ auth g m s md mt mdig manager defaultBaseUrl
 
 -- | Check status of a previously sent message.
 smsAeroStatus :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
               -> MessageId   -- ^ Message ID.
+              -> Manager     -- ^ Connection manager.
               -> SmsAero MessageStatus
+smsAeroStatus auth mid manager = smsAeroStatus_ auth mid manager defaultBaseUrl
 
 -- | Check status of a broadcast.
 smsAeroCheckSending :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
                     -> MessageId   -- ^ Broadcast ID.
+                    -> Manager     -- ^ Connection manager.
                     -> SmsAero CheckSendingResponse
+smsAeroCheckSending auth mid manager = smsAeroCheckSending_ auth mid manager defaultBaseUrl
 
 -- | Check balance.
 smsAeroBalance :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
+               -> Manager     -- ^ Connection manager.
                -> SmsAero BalanceResponse
+smsAeroBalance auth manager = smsAeroBalance_ auth manager defaultBaseUrl
 
 -- | Check tariff.
 smsAeroCheckTariff :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
+                   -> Manager     -- ^ Connection manager.
                    -> SmsAero CheckTariffResponse
+smsAeroCheckTariff auth manager = smsAeroCheckTariff_ auth manager defaultBaseUrl
 
 -- | Check the list of available sender signatures.
 smsAeroSenders :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
+               -> Manager     -- ^ Connection manager.
                -> SmsAero SendersResponse
+smsAeroSenders auth manager = smsAeroSenders_ auth manager defaultBaseUrl
 
 -- | Acquire a new signature.
 smsAeroSign :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
+            -> Manager     -- ^ Connection manager.
             -> SmsAero SignResponse
+smsAeroSign auth manager = smsAeroSign_ auth manager defaultBaseUrl
 
 -- | Get groups list (corresponds to 'checkgroup' endpoint).
 smsAeroListGroups :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
+                  -> Manager     -- ^ Connection manager.
                   -> SmsAero [Group]
+smsAeroListGroups auth manager = smsAeroListGroups_ auth manager defaultBaseUrl
 
 -- | Add a group.
 smsAeroAddGroup :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
                 -> Group       -- ^ Name for the new group.
+                -> Manager     -- ^ Connection manager.
                 -> SmsAero GroupResponse
+smsAeroAddGroup auth g manager = smsAeroAddGroup_ auth g manager defaultBaseUrl
 
 -- | Delete a group.
 smsAeroDeleteGroup :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password).
                    -> Group       -- ^ Name of the group to be deleted.
+                   -> Manager     -- ^ Connection manager.
                    -> SmsAero GroupResponse
+smsAeroDeleteGroup auth g manager = smsAeroDeleteGroup_ auth g manager defaultBaseUrl
 
 -- | Add a phone to contact list or group.
 smsAeroAddPhone :: SMSAeroAuth     -- ^ Authentication data (login and MD5 hash of password).
@@ -125,31 +147,55 @@ smsAeroAddPhone :: SMSAeroAuth     -- ^ Authentication data (login and MD5 hash 
                 -> Maybe Name      -- ^ Subscriber's middle name.
                 -> Maybe BirthDate -- ^ Subscriber's birth date.
                 -> Maybe Text      -- ^ Any additional information.
+                -> Manager         -- ^ Connection manager.
                 -> SmsAero PhoneResponse
+smsAeroAddPhone auth p g ln fn mn bd txt manager = smsAeroAddPhone_ auth p g ln fn mn bd txt manager defaultBaseUrl
 
 -- | Delete a phone from contact list or group.
 smsAeroDeletePhone :: SMSAeroAuth     -- ^ Authentication data (login and MD5 hash of password).
                    -> Phone           -- ^ Subscriber's phone number.
                    -> Maybe Group     -- ^ Group to remove contact from. If absent, contact will be deleted from general contact list.
+                   -> Manager         -- ^ Connection manager.
                    -> SmsAero PhoneResponse
+smsAeroDeletePhone auth p mg manager = smsAeroDeletePhone_ auth p mg manager defaultBaseUrl
 
 -- | Add a phone number to blacklist.
 smsAeroAddToBlacklist :: SMSAeroAuth -- ^ Authentication data (login and MD5 hash of password)
                       -> Phone       -- ^ Phone number to be added to blacklist.
+                      -> Manager     -- ^ Connection manager.
                       -> SmsAero BlacklistResponse
+smsAeroAddToBlacklist auth p manager = smsAeroAddToBlacklist_ auth p manager defaultBaseUrl
 
-smsAeroSend           auth = let (f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroSendToGroup    auth = let (_ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroStatus         auth = let (_ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroCheckSending   auth = let (_ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroBalance        auth = let (_ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroCheckTariff    auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroSenders        auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroSign           auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroListGroups     auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (f :<|> _ :<|> _) :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroAddGroup       auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (_ :<|> f :<|> _) :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroDeleteGroup    auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (_ :<|> _ :<|> f) :<|> _ :<|> _) = smsAeroClient auth in f
-smsAeroAddPhone       auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (f :<|> _) :<|> _) = smsAeroClient auth in f
-smsAeroDeletePhone    auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (_ :<|> f) :<|> _) = smsAeroClient auth in f
-smsAeroAddToBlacklist auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f) = smsAeroClient auth in f
+-- | Common SMSAero client type.
+type SmsAero' a = Manager -> BaseUrl -> SmsAero a
+
+smsAeroSend_ :: SMSAeroAuth -> Phone -> MessageBody -> Signature -> Maybe SMSAeroDate -> Maybe SendType -> Maybe DigitalChannel -> SmsAero' SendResponse
+smsAeroSendToGroup_ :: SMSAeroAuth -> Group -> MessageBody -> Signature -> Maybe SMSAeroDate -> Maybe SendType -> Maybe DigitalChannel -> SmsAero' SendResponse
+smsAeroStatus_ :: SMSAeroAuth -> MessageId -> SmsAero' MessageStatus
+smsAeroCheckSending_ :: SMSAeroAuth -> MessageId -> SmsAero' CheckSendingResponse
+smsAeroBalance_ :: SMSAeroAuth -> SmsAero' BalanceResponse
+smsAeroCheckTariff_ :: SMSAeroAuth -> SmsAero' CheckTariffResponse
+smsAeroSenders_ :: SMSAeroAuth -> SmsAero' SendersResponse
+smsAeroSign_ :: SMSAeroAuth -> SmsAero' SignResponse
+smsAeroListGroups_ :: SMSAeroAuth -> SmsAero' [Group]
+smsAeroAddGroup_ :: SMSAeroAuth -> Group -> SmsAero' GroupResponse
+smsAeroDeleteGroup_ :: SMSAeroAuth -> Group -> SmsAero' GroupResponse
+smsAeroAddPhone_ :: SMSAeroAuth -> Phone -> Maybe Group -> Maybe Name -> Maybe Name -> Maybe Name -> Maybe BirthDate -> Maybe Text -> SmsAero' PhoneResponse
+smsAeroDeletePhone_ :: SMSAeroAuth -> Phone -> Maybe Group -> SmsAero' PhoneResponse
+smsAeroAddToBlacklist_ :: SMSAeroAuth -> Phone -> SmsAero' BlacklistResponse
+
+smsAeroSend_           auth = let (f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroSendToGroup_    auth = let (_ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroStatus_         auth = let (_ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroCheckSending_   auth = let (_ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroBalance_        auth = let (_ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroCheckTariff_    auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroSenders_        auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroSign_           auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f :<|> _ :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroListGroups_     auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (f :<|> _ :<|> _) :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroAddGroup_       auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (_ :<|> f :<|> _) :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroDeleteGroup_    auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (_ :<|> _ :<|> f) :<|> _ :<|> _) = smsAeroClient auth in f
+smsAeroAddPhone_       auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (f :<|> _) :<|> _) = smsAeroClient auth in f
+smsAeroDeletePhone_    auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> (_ :<|> f) :<|> _) = smsAeroClient auth in f
+smsAeroAddToBlacklist_ auth = let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> f) = smsAeroClient auth in f
 
