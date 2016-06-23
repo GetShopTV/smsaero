@@ -1,6 +1,8 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TemplateHaskell #-}
 -- |
 -- Module      : SMSAero.Types
 -- Copyright   : (c) 2016, GetShopTV
@@ -36,19 +38,34 @@ import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds, posixSecondsToUTCTime)
 import Data.Text (Text)
 import qualified Data.Text as Text
 
+import Data.Swagger
+
 import Web.HttpApiData.Internal
 
+import GHC.Generics
+
 -- | SMSAero sender's signature. This is used for the "from" field.
-newtype Signature = Signature { getSignature :: Text } deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
+newtype Signature = Signature { getSignature :: Text } deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData, Generic)
+
+instance ToSchema Signature
+instance ToParamSchema Signature
 
 -- | SMSAero sent message id.
-newtype MessageId = MessageId Int64 deriving (Eq, Show, Ord, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
+newtype MessageId = MessageId Int64 deriving (Eq, Show, Ord, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData, Generic)
+
+instance ToSchema MessageId
+instance ToParamSchema MessageId
 
 -- | SMSAero message body.
-newtype MessageBody = MessageBody Text deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
+newtype MessageBody = MessageBody Text deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData, Generic)
+
+instance ToParamSchema MessageBody
 
 -- | SMSAero group name.
-newtype Group = Group Text deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
+newtype Group = Group Text deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData, Generic)
+
+instance ToSchema Group
+instance ToParamSchema Group
 
 -- | SMSAero channel name.
 type ChannelName = Text
@@ -71,7 +88,9 @@ instance ToJSON SMSAeroAuth where
     , "password" .= authPassword ]
 
 -- | Phone number.
-newtype Phone = Phone { getPhone :: Int64 } deriving (Eq, Show, ToHttpApiData, FromHttpApiData)
+newtype Phone = Phone { getPhone :: Int64 } deriving (Eq, Show, ToHttpApiData, FromHttpApiData, Generic)
+
+instance ToParamSchema Phone
 
 -- | Date. Textually @SMSAeroDate@ is represented as a number of seconds since 01 Jan 1970.
 newtype SMSAeroDate = SMSAeroDate { getSMSAeroDate :: UTCTime } deriving (Eq, Show)
@@ -115,8 +134,12 @@ instance FromHttpApiData SendType where
   parseQueryParam = parseBoundedQueryParam
 
 -- | Subscriber's name.
-newtype Name = Name Text deriving (Eq, Show, ToHttpApiData, FromHttpApiData)
+newtype Name = Name Text deriving (Eq, Show, ToHttpApiData, FromHttpApiData, Generic)
+
+instance ToParamSchema Name
 
 -- | Subscriber's birth date. Textually represented in %Y-%m-%d format.
-newtype BirthDate = BirthDate Day deriving (Eq, Show, ToHttpApiData, FromHttpApiData)
+newtype BirthDate = BirthDate Day deriving (Eq, Show, ToHttpApiData, FromHttpApiData, Generic)
+
+instance ToParamSchema BirthDate
 

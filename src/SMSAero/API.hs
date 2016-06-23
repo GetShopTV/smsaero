@@ -62,6 +62,8 @@ import qualified Data.Map as Map
 
 import Data.Maybe (catMaybes)
 
+import Data.Swagger
+
 import Control.Applicative
 import Control.Arrow ((***))
 import GHC.TypeLits (Symbol, KnownSymbol)
@@ -301,7 +303,9 @@ instance ToSample (SmsAeroResponse MessageStatus) where
     , ("When message has been queued.", ResponseOK StatusQueue) ]
 
 -- | SMSAero response to a balance request (balance in rubles).
-newtype BalanceResponse = BalanceResponse Double deriving (Eq, Show)
+newtype BalanceResponse = BalanceResponse Double deriving (Eq, Show, Generic)
+
+instance ToSchema BalanceResponse
 
 instance ToSample (SmsAeroResponse BalanceResponse) where
   toSamples _ =
@@ -315,7 +319,9 @@ type CheckTariffResponse = Map ChannelName Double
 type CheckSendingResponse = Map MessageId MessageStatus
 
 -- This is just a list of available signatures.
-newtype SendersResponse = SendersResponse [Signature] deriving (Eq, Show, FromJSON, ToJSON)
+newtype SendersResponse = SendersResponse [Signature] deriving (Eq, Show, FromJSON, ToJSON, Generic)
+
+instance ToSchema SendersResponse
 
 instance ToSample (SmsAeroResponse SendersResponse) where
   toSamples _ = singleSample (ResponseOK (SendersResponse [Signature "TEST", Signature "My Company"]))
@@ -333,13 +339,19 @@ instance ToSample (SmsAeroResponse SignResponse) where
     , ("When a new signature is rejected.", ResponseOK SignRejected) ]
 
 -- | SMSAero response to an addgroup/delgroup request.
-newtype GroupResponse = GroupResponse Text deriving (Eq, Show, FromJSON, ToJSON)
+newtype GroupResponse = GroupResponse Text deriving (Eq, Show, FromJSON, ToJSON, Generic)
+
+instance ToSchema GroupResponse
 
 -- | SMSAero response to an addphone/delphone request.
-newtype PhoneResponse = PhoneResponse Text deriving (Eq, Show, FromJSON, ToJSON)
+newtype PhoneResponse = PhoneResponse Text deriving (Eq, Show, FromJSON, ToJSON, Generic)
+
+instance ToSchema PhoneResponse
 
 -- | SMSAero response to an addblacklist request.
-newtype BlacklistResponse = BlacklistResponse Text deriving (Eq, Show, FromJSON, ToJSON)
+newtype BlacklistResponse = BlacklistResponse Text deriving (Eq, Show, FromJSON, ToJSON, Generic)
+
+instance ToSchema BlacklistResponse
 
 instance FromJSON a => FromJSON (SmsAeroResponse a) where
   parseJSON (Object o) = do
