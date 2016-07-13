@@ -61,6 +61,7 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 
 import Data.Maybe (catMaybes)
+import Text.Read (readEither)
 
 import Control.Applicative
 import Control.Arrow ((***))
@@ -394,11 +395,15 @@ instance ToJSON MessageStatus where
   toJSON status = object [ "result" .= toUrlPiece status ]
 
 instance FromJSON BalanceResponse where
-  parseJSON (Object o) = BalanceResponse <$> o .: "balance"
+  parseJSON (Object o) = do
+    str <- o .: "balance"
+    case readEither str of
+      Left err -> fail err
+      Right b  -> return (BalanceResponse b)
   parseJSON _ = empty
 
 instance ToJSON BalanceResponse where
-  toJSON (BalanceResponse n) = object [ "balance" .= n ]
+  toJSON (BalanceResponse n) = object [ "balance" .= show n ]
 
 instance ToHttpApiData SignResponse where
   toQueryParam SignApproved = "approved"
