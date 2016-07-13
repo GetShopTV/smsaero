@@ -1,5 +1,5 @@
 name:                smsaero
-version:             0.6
+version:             0.6.1
 synopsis:            SMSAero API and HTTP client based on servant library.
 description:         Please see README.md
 homepage:            https://github.com/GetShopTV/smsaero
@@ -7,7 +7,7 @@ license:             BSD3
 license-file:        LICENSE
 author:              Nickolay Kudasov
 maintainer:          nickolay@getshoptv.com
-copyright:           (c) 2015, GetShopTV
+copyright:           (c) 2015-2016, GetShopTV
 category:            Web
 build-type:          Simple
 extra-source-files:

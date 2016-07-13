@@ -1,3 +1,7 @@
+0.6.1
+---
+* Fix `SmsAeroBalance` `ToJSON`/`FromJSON` instances.
+
 0.6
 ---
 * Change client function types (see [#11](https://github.com/GetShopTV/smsaero/pull/11)).
