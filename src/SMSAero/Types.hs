@@ -42,7 +42,7 @@ import Web.HttpApiData.Internal
 newtype Signature = Signature { getSignature :: Text } deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
 
 -- | SMSAero sent message id.
-newtype MessageId = MessageId Int64 deriving (Eq, Show, Ord, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
+newtype MessageId = MessageId Int64 deriving (Eq, Show, Ord, FromJSON, FromJSONKey, ToJSON, ToHttpApiData, FromHttpApiData)
 
 -- | SMSAero message body.
 newtype MessageBody = MessageBody Text deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
