@@ -29,7 +29,6 @@ module SMSAero.API (
   PhoneApi,
   BlacklistApi,
   -- * Combinators
-  SmsAeroJson,
   AnswerJson,
   RequireAuth,
   RequiredQueryParam,
@@ -77,18 +76,6 @@ import Web.HttpApiData
 import GHC.Generics
 
 import SMSAero.Types
-
--- | Content type for SMSAero JSON answer (it has JSON body but "text/plain" Content-Type).
-data SmsAeroJson
-
-instance Accept SmsAeroJson where
-  contentType _ = contentType (Proxy :: Proxy PlainText)
-
-instance FromJSON a => MimeUnrender SmsAeroJson a where
-  mimeUnrender _ = mimeUnrender (Proxy :: Proxy JSON)
-
-instance ToJSON a => MimeRender SmsAeroJson a where
-  mimeRender _ = mimeRender (Proxy :: Proxy JSON)
 
 -- | Like 'QueryParam', but always required.
 data RequiredQueryParam (sym :: Symbol) a
@@ -156,7 +143,7 @@ instance HasDocs sub => HasDocs (AnswerJson :> sub) where
       params' = _params action ++ [answerP]
 
 -- | Regular SMSAero GET API.
-type SmsAeroGet a = Get '[SmsAeroJson] (SmsAeroResponse a)
+type SmsAeroGet a = Get '[JSON] (SmsAeroResponse a)
 
 -- | SMSAero API.
 type SMSAeroAPI = RequireAuth :> AnswerJson :>
