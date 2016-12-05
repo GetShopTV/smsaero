@@ -59,11 +59,9 @@ import qualified Data.Text as Text
 import Data.Map (Map)
 import qualified Data.Map as Map
 
-import Data.Maybe (catMaybes)
 import Text.Read (readEither)
 
 import Control.Applicative
-import Control.Arrow ((***))
 import GHC.TypeLits (Symbol, KnownSymbol)
 
 import Servant.API
@@ -84,7 +82,7 @@ instance (HasClient sub, KnownSymbol sym, ToHttpApiData a) => HasClient (Require
   type Client (RequiredQueryParam sym a :> sub) = a -> Client sub
   clientWithRoute _ req param = clientWithRoute (Proxy :: Proxy (QueryParam sym a :> sub)) req (Just param)
 
-instance (KnownSymbol sym, ToParam (QueryParam sym a), HasDocs sub) => HasDocs (RequiredQueryParam sym a :> sub) where
+instance (ToParam (QueryParam sym a), HasDocs sub) => HasDocs (RequiredQueryParam sym a :> sub) where
   docsFor _ (endpoint, action) =
     docsFor subP (endpoint, action')
 
@@ -413,10 +411,4 @@ instance ToJSON SignResponse where
 
 instance ToJSON CheckSendingResponse where
   toJSON = toJSON . Map.mapKeys toQueryParam . fmap toQueryParam
-
-instance FromJSON CheckSendingResponse where
-  parseJSON js =
-    Map.fromList . catMaybes . map dist . map (parseQueryParamMaybe *** parseQueryParamMaybe) . Map.toList <$> parseJSON js
-    where
-      dist (x, y) = (,) <$> x <*> y
 
