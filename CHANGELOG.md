@@ -1,3 +1,7 @@
+0.6.2
+---
+* Get rid of `SmsAeroJson` (they have finally fixed their `Content-Type`!). See [5a7539e](https://github.com/GetShopTV/smsaero/commit/5a7539edff7f274d39c58ce02f19bcb14bbc05b5).
+
 0.6.1
 ---
 * Fix `SmsAeroBalance` `ToJSON`/`FromJSON` instances.
