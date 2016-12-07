@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -28,6 +29,7 @@ import Control.Applicative (empty)
 
 import Data.Aeson
 import Data.Int (Int64)
+import Data.Monoid
 
 import Data.Time (UTCTime)
 import Data.Time.Calendar (Day)
@@ -36,13 +38,18 @@ import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds, posixSecondsToUTCTime)
 import Data.Text (Text)
 import qualified Data.Text as Text
 
-import Web.HttpApiData.Internal
+import Web.HttpApiData
 
 -- | SMSAero sender's signature. This is used for the "from" field.
 newtype Signature = Signature { getSignature :: Text } deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
 
 -- | SMSAero sent message id.
-newtype MessageId = MessageId Int64 deriving (Eq, Show, Ord, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
+newtype MessageId = MessageId Int64
+  deriving (Eq, Show, Ord, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData
+#if MIN_VERSION_aeson(1,0,0)
+  , ToJSONKey, FromJSONKey
+#endif
+  )
 
 -- | SMSAero message body.
 newtype MessageBody = MessageBody Text deriving (Eq, Show, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
@@ -102,7 +109,7 @@ instance ToHttpApiData DigitalChannel where
 
 instance FromHttpApiData DigitalChannel where
   parseQueryParam "1" = Right DigitalChannel
-  parseQueryParam x = defaultParseError x
+  parseQueryParam x = Left ("expected 1 for digital channel (but got " <> x <> ")")
 
 instance ToHttpApiData SendType where
   toQueryParam PaidSignature          = "1"

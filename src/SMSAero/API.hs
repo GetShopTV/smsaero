@@ -1,4 +1,5 @@
 {-# OPTIONS -fno-warn-orphans #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -57,13 +58,10 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 
 import Data.Map (Map)
-import qualified Data.Map as Map
 
-import Data.Maybe (catMaybes)
 import Text.Read (readEither)
 
 import Control.Applicative
-import Control.Arrow ((***))
 import GHC.TypeLits (Symbol, KnownSymbol)
 
 import Servant.API
@@ -76,6 +74,13 @@ import Web.HttpApiData
 import GHC.Generics
 
 import SMSAero.Types
+
+#if MIN_VERSION_aeson(1,0,0)
+#else
+import Data.Maybe (catMaybes)
+import Control.Arrow ((***))
+import qualified Data.Map as Map
+#endif
 
 -- | Like 'QueryParam', but always required.
 data RequiredQueryParam (sym :: Symbol) a
@@ -411,6 +416,9 @@ instance FromJSON SignResponse where
 instance ToJSON SignResponse where
   toJSON s = object [ "accepted" .= toUrlPiece s ]
 
+#if MIN_VERSION_aeson(1,0,0)
+#else
+
 instance ToJSON CheckSendingResponse where
   toJSON = toJSON . Map.mapKeys toQueryParam . fmap toQueryParam
 
@@ -420,3 +428,4 @@ instance FromJSON CheckSendingResponse where
     where
       dist (x, y) = (,) <$> x <*> y
 
+#endif
