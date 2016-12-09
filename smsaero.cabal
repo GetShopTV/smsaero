@@ -1,5 +1,5 @@
 name:                smsaero
-version:             0.7
+version:             0.7.1
 synopsis:            SMSAero API and HTTP client based on servant library.
 description:         Please see README.md
 homepage:            https://github.com/GetShopTV/smsaero
@@ -25,7 +25,7 @@ library
     SMSAero.API
     SMSAero.Client
     SMSAero.Types
-  build-depends:       base >= 4.7 && < 5
+  build-depends:       base == 4.9.*
                      , servant >= 0.9
                      , servant-client
                      , servant-docs

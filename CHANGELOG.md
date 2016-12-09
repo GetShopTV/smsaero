@@ -1,3 +1,7 @@
+0.7.1
+---
+* Restrict `base` to `4.9.*` (see [#15](https://github.com/GetShopTV/smsaero/issues/15)).
+
 0.7
 ---
 * Add support for `aeson-1`;
