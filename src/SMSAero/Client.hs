@@ -44,7 +44,7 @@ import SMSAero.API
 import SMSAero.Types
 
 -- | SMSAero client.
-smsAeroClient :: Client SMSAeroAPI
+smsAeroClient :: Client ClientM SMSAeroAPI
 smsAeroClient = client (Proxy :: Proxy SMSAeroAPI)
 
 -- | Default host @https://gate.smsaero.ru@.
