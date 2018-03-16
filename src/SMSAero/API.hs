@@ -32,7 +32,6 @@ module SMSAero.API (
   -- * Combinators
   AnswerJson,
   RequireAuth,
-  RequiredQueryParam,
   SmsAeroGet,
   -- * Responses
   SmsAeroResponse(..),
@@ -62,7 +61,6 @@ import Data.Map (Map)
 import Text.Read (readEither)
 
 import Control.Applicative
-import GHC.TypeLits (Symbol, KnownSymbol)
 
 import Servant.API
 import Servant.Client
@@ -82,30 +80,17 @@ import Control.Arrow ((***))
 import qualified Data.Map as Map
 #endif
 
--- | Like 'QueryParam', but always required.
-data RequiredQueryParam (sym :: Symbol) a
-
-instance (HasClient sub, KnownSymbol sym, ToHttpApiData a) => HasClient (RequiredQueryParam sym a :> sub) where
-  type Client (RequiredQueryParam sym a :> sub) = a -> Client sub
-  clientWithRoute _ req param = clientWithRoute (Proxy :: Proxy (QueryParam sym a :> sub)) req (Just param)
-
-instance (KnownSymbol sym, ToParam (QueryParam sym a), HasDocs sub) => HasDocs (RequiredQueryParam sym a :> sub) where
-  docsFor _ (endpoint, action) =
-    docsFor subP (endpoint, action')
-
-    where subP = Proxy :: Proxy sub
-          paramP = Proxy :: Proxy (QueryParam sym a)
-          action' = action { _params = params' }
-          params' = _params action ++ [toParam paramP]
+type RequiredQueryParam = QueryParam' '[Required, Strict]
 
 -- | SMSAero authentication credentials.
 data RequireAuth
 
-instance HasClient sub => HasClient (RequireAuth :> sub) where
-  type Client (RequireAuth :> sub) = SMSAeroAuth -> Client sub
+instance HasClient m sub => HasClient m (RequireAuth :> sub) where
+  type Client m (RequireAuth :> sub) = SMSAeroAuth -> Client m sub
 
-  clientWithRoute _ req SMSAeroAuth{..} =
+  clientWithRoute pm _ req SMSAeroAuth{..} =
     clientWithRoute
+      pm
       (Proxy :: Proxy (RequiredQueryParam "user"     Text :>
                        RequiredQueryParam "password" Text :>
                        sub))
@@ -132,9 +117,9 @@ instance HasDocs sub => HasDocs (RequireAuth :> sub) where
 -- | Implicit parameter that tells SMSAero to respond with JSON.
 data AnswerJson
 
-instance HasClient sub => HasClient (AnswerJson :> sub) where
-    type Client (AnswerJson :> sub) = Client sub
-    clientWithRoute _ req = clientWithRoute (Proxy :: Proxy (RequiredQueryParam "answer" Text :> sub)) req "json"
+instance HasClient m sub => HasClient m (AnswerJson :> sub) where
+    type Client m (AnswerJson :> sub) = Client m sub
+    clientWithRoute pm _ req = clientWithRoute pm (Proxy :: Proxy (RequiredQueryParam "answer" Text :> sub)) req "json"
 
 instance HasDocs sub => HasDocs (AnswerJson :> sub) where
   docsFor _ (endpoint, action) = docsFor subP (endpoint, action')
