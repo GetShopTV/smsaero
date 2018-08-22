@@ -25,7 +25,7 @@ library
     SMSAero.API
     SMSAero.Client
     SMSAero.Types
-  build-depends:       base == 4.10.*
+  build-depends:       base == 4.11.*
                      , servant >= 0.9
                      , servant-client
                      , servant-docs
